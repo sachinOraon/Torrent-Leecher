@@ -112,7 +112,7 @@
       <!-- Modal body -->
       <div class="modal-body">
        <div class="alert alert-danger">
-        Purging file will remove all the downloaded files and logs from the server. Use this to free up space.
+        Purging file will remove all the downloaded files and logs from the server. Use this to free up space in one go.
        </div>
        <form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>'>
         <div class="form-group">
@@ -224,7 +224,7 @@
     <div class="container">
 
       <!-- Brand -->
-      <a class="navbar-brand waves-effect" href="http://www.github.com/sachinOraon" target="_blank">
+      <a class="navbar-brand waves-effect" href="http://www.github.com/sachinOraon/Torrent-Leecher" target="_blank">
         <i class="fab fa-github fa-lg"></i>&nbsp;<strong>sachinOraon</strong>
       </a>
       <!-- Collapse -->
@@ -265,7 +265,7 @@
   <!-- Navbar -->
 
   <!-- Full Page Intro -->
-  <div class="view" style="background-image: url('https://www.hdwallpapers.in/download/experiment_3-1280x720.jpg'); background-repeat: no-repeat; background-size: cover;">
+  <div id="particles-js" class="view" style="background-image: url('https://www.hdwallpapers.in/download/experiment_3-1280x720.jpg'); background-repeat: no-repeat; background-size: cover;">
 
     <!-- Mask & flexbox options-->
     <div class="mask rgba-black-light d-flex justify-content-center align-items-center">
@@ -333,6 +333,9 @@
   <script type="text/javascript" src="js/mdb.min.js"></script>
   <!-- Typed.js plugin -->
   <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11"></script>
+  <!-- Particles.js plugin -->
+  <script type="text/javascript" src="js/particles.js"></script>
+  <script type="text/javascript" src="js/app.js"></script>
   <!-- Initializations -->
   <script type="text/javascript">
   $(document).ready(function(){
