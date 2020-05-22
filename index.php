@@ -36,7 +36,7 @@
  /* take the url and hand it to the leecher script */
  if(isset($_POST['torrent_url']))
  {
-  $url="'".$_POST['torrent_url']."'";
+  $url="'".trim($_POST['torrent_url'])."'";
   $logfile='/var/www/html/torrent/files/_log/'.time().'.txt';
   $cmd='python3 leecher.py '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
   shell_exec($cmd);
@@ -283,16 +283,16 @@
 	            <p>NO limitation in file size.</p>
             </div>
             <h6 class="font-weight-bold" style="text-shadow: 0 0 10px #f44336, 0 0 12px #00c3ff, 0 0 14px #6800ff, 0 0 16px #f00, 0 0 18px #f00;"><span id="typed-body"></span></h6><br><br>
-			<form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>'>
+			<form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>' id='submitUrl'>
 			  <div class="form-group">
 				<div class="input-group mx-auto">
 				  <div class="input-group-prepend">
 				    <span class="input-group-text" id="inputGroup-sizing-default"><i class="fas fa-magnet"></i></span>
 				  </div>
-				  <input type="text" class="form-control" name='torrent_url'  aria-label="torrent url" aria-describedby="inputGroup-sizing-default" placeholder="Paste .torrent file url or magnet link" required>
+				  <input type="text" class="form-control" name='torrent_url' aria-label="torrent url" aria-describedby="inputGroup-sizing-default" placeholder="Paste .torrent file url or magnet link" required>
 				</div>
 			   </div>
-			  <button type="submit" class="btn btn-outline-white btn-lg" >Download <i class="fas fa-arrow-circle-down fa-lg"></i></button>
+			  <button type="button" class="btn btn-outline-white btn-lg submitBtn">Download <i class="fas fa-arrow-circle-down fa-lg"></i></button>
 			</form>
       </div>
       <!--/.Content -->
@@ -363,6 +363,22 @@
         ?>
         content: '<?php echo '<p class="text-monospace font-weight-bold">'.$info.'</p>'; ?>'
   	});
+    // Avoid taking empty data
+    $('.submitBtn').on('click', function(){
+        var url=$('input[name="torrent_url"]').val().trim();
+        if(url === ""){
+            // display alert tooltip
+            $('input[name="torrent_url"]').tooltip({
+                trigger: "click",
+                html: true,
+                title: '<h6 class="font-weight-bold">Empty URL given :(</h6>',
+                placement: "top"
+            });
+            $('input[name="torrent_url"]').tooltip('show');
+            setTimeout(() => { $('input[name="torrent_url"]').tooltip('dispose'); }, 1000);
+        }
+        else $('#submitUrl').submit();
+    });
   });
  </script>
 <?php
