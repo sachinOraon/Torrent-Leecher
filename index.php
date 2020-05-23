@@ -82,13 +82,35 @@
       <!-- Modal Header -->
       <div class="modal-header">
         <h4 class="modal-title text-info">Information</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
       <!-- Modal body -->
       <div class="modal-body">
         Your request has been submitted successfully. Kindly wait till your file is downloaded. You can find the downloaded files via File Browser menu.
       </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- The Modal -->
+<div class="modal fade" id="processLst">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title text-info">Process List</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body processinfo"></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -106,7 +128,7 @@
       <!-- Modal Header -->
       <div class="modal-header">
         <h4 class="modal-title">Purge Files</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
       <!-- Modal body -->
@@ -133,7 +155,7 @@
       <!-- Modal Header -->
       <div class="modal-header">
         <h4 class="modal-title">Information</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
       <!-- Modal body -->
@@ -163,7 +185,7 @@
       <!-- Modal Header -->
       <div class="modal-header">
         <h4 class="modal-title">Delete Files</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
       <!-- Modal body -->
@@ -191,7 +213,7 @@
       <!-- Modal Header -->
       <div class="modal-header">
         <h4 class="modal-title">Files Available</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
       <!-- Modal body -->
@@ -238,8 +260,11 @@
 
         <!-- Left -->
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item active">
+          <li class="nav-item">
             <a class="nav-link" href="/torrent"><i class="fas fa-redo-alt"></i> Reload</a><span class="sr-only">(current)</span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a></span>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
@@ -381,6 +406,14 @@
             setTimeout(() => { $('input[name="torrent_url"]').tooltip('dispose'); }, 1000);
         }
         else $('#submitUrl').submit();
+    });
+    // Display processLst modal and fetch running process info
+    $('.pbtn').on('click', function(){
+        $('#processLst').modal('show');
+    });
+    $('#processLst').on('show.bs.modal', function(){
+        // ajax call to fetch process info
+        $('.processinfo').load('/torrent/getProcessInfo.php', {"getProcess": true} );
     });
   });
  </script>
