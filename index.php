@@ -41,6 +41,7 @@
   $cmd='python3 leecher.py '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
   shell_exec($cmd);
   $_SESSION['flag']=true;
+  $_SESSION['logfile']=$logfile;
  }
  /* default password for files deletion */
  $pass='qwerty';
@@ -133,6 +134,28 @@
 
       <!-- Modal body -->
       <div class="modal-body storage-info"></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- The Modal -->
+<div class="modal fade" id="logModal">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">View Log</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body logfile"></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -292,6 +315,9 @@
             <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link logBtn" href="#"><i class="fas fa-stream"></i> View Log</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
           </li>
           <li class="nav-item">
@@ -428,6 +454,23 @@
     $('#processLst').on('show.bs.modal', function(){
         // ajax call to fetch process info
         $('.processinfo').load('/torrent/getInfo.php', {"getProcess": true} );
+    });
+    // Display log modal
+    $('.logBtn').on('click', function(){
+        $('#logModal').modal('show');
+    });
+    var refreshLog;
+    $('#logModal').on('show.bs.modal', function(){
+      $('.logfile').load('/torrent/getInfo.php', {'getLog': <?php if(isset($_SESSION['logfile'])) echo '"'.$_SESSION['logfile'].'"'; else echo '"NO"'; ?>});
+    });
+    $('#logModal').on('shown.bs.modal', function(){
+      refreshLog = setInterval(fetchLog ,5000);
+    });
+    function fetchLog(){
+      $('.logfile').load('/torrent/getInfo.php', {'getLog': <?php if(isset($_SESSION['logfile'])) echo '"'.$_SESSION['logfile'].'"'; else echo '"NO"'; ?>});
+    }
+    $('#logModal').on('hide.bs.modal', function(){
+      clearInterval(refreshLog);
     });
   });
  </script>
