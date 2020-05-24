@@ -81,7 +81,7 @@
 
       <!-- Modal Header -->
       <div class="modal-header">
-        <h4 class="modal-title text-info">Information</h4>
+        <h4 class="modal-title">Information</h4>
         <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
@@ -105,12 +105,34 @@
 
       <!-- Modal Header -->
       <div class="modal-header">
-        <h4 class="modal-title text-info">Process List</h4>
+        <h4 class="modal-title">Process List</h4>
         <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
       <!-- Modal body -->
       <div class="modal-body processinfo"></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- The Modal -->
+<div class="modal fade" id="storageInfo">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Storage Info</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body storage-info"></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -267,10 +289,10 @@
             <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a></span>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
+            <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
+            <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#" data-toggle="modal" data-target="#PurgeModal" data-backdrop="static"><i class="fas fa-skull-crossbones"></i> Purge Files</a>
@@ -368,29 +390,21 @@
     new WOW().init();
     // Typed.js
     var typed = new Typed('#typed-body', {
-        stringsElement: '#typed-strings-body',
-    	typeSpeed: 40,
-	    loop: true,
-	    loopCount: Infinity,
-        shuffle: false,
-        backSpeed: 20
-  	});
-  	// Storage info popover
-  	$('.storage_info').popover({
-  		html: true,
-  		title: '<h5>Partition info</h5>',
-  		trigger: "hover",
-  		placement: "bottom",
-        <?php
-         $str=shell_exec('df -H --sync --output=size,used,avail,pcent --type=ext4');
-         $str=trim(preg_replace('/\s+/',' ', $str));
-         $arr=explode(" ", $str);
-         $info='';
-         for($i=0, $j=4; $i<count($arr)/2; $i++, $j++)
-            $info .= $arr[$i].' : '.$arr[$j].'<br>';
-        ?>
-        content: '<?php echo '<p class="text-monospace font-weight-bold">'.$info.'</p>'; ?>'
-  	});
+      stringsElement: '#typed-strings-body',
+      typeSpeed: 40,
+      loop: true,
+      loopCount: Infinity,
+      shuffle: false,
+      backSpeed: 20
+    });
+    // Storage info modal
+    $('.storage_info').on('click', function(){
+        $('#storageInfo').modal('show');
+    });
+    $('#storageInfo').on('show.bs.modal', function(){
+        // ajax call to fetch storage info
+        $('.storage-info').load('/torrent/getInfo.php', {"getStorage": true} );
+    });
     // Avoid taking empty data
     $('.submitBtn').on('click', function(){
         var url=$('input[name="torrent_url"]').val().trim();
@@ -413,7 +427,7 @@
     });
     $('#processLst').on('show.bs.modal', function(){
         // ajax call to fetch process info
-        $('.processinfo').load('/torrent/getProcessInfo.php', {"getProcess": true} );
+        $('.processinfo').load('/torrent/getInfo.php', {"getProcess": true} );
     });
   });
  </script>
