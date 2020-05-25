@@ -1,7 +1,7 @@
 <?php
  if($_REQUEST['getProcess'] == true){
-    $info = shell_exec('ps -u www-data | ps -o pid,cmd -C python3');
-    $count = shell_exec('ps -u www-data | ps -o pid,cmd -C python3 | wc -l');
+    $info = shell_exec('ps -o pid,etime,%mem,%cpu,cmd -C python3');
+    $count = shell_exec('ps -C python3 | wc -l');
     if($count > 1)
         echo '<pre>'.$info.'</pre>';
     else echo '<p class="text-success font-weight-bold">No active process found</p>';

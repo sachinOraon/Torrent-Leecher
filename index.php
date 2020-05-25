@@ -412,8 +412,6 @@
   <!-- Initializations -->
   <script type="text/javascript">
   $(document).ready(function(){
-    // Animations initialization
-    new WOW().init();
     // Typed.js
     var typed = new Typed('#typed-body', {
       stringsElement: '#typed-strings-body',
@@ -451,26 +449,33 @@
     $('.pbtn').on('click', function(){
         $('#processLst').modal('show');
     });
-    $('#processLst').on('show.bs.modal', function(){
-        // ajax call to fetch process info
-        $('.processinfo').load('/torrent/getInfo.php', {"getProcess": true} );
+    $('#processLst').on('shown.bs.modal', function(){
+        fetchProcess();
+        refreshProcess = setInterval(fetchProcess, 5000);
     });
+    $('#processLst').on('hide.bs.modal', function(){
+        clearInterval(refreshProcess);
+    });
+    function fetchProcess(){
+        $('.processinfo').load('/torrent/getInfo.php', {"getProcess": true} );
+    }
     // Display log modal
     $('.logBtn').on('click', function(){
         $('#logModal').modal('show');
     });
-    var refreshLog;
-    $('#logModal').on('show.bs.modal', function(){
-      $('.logfile').load('/torrent/getInfo.php', {'getLog': <?php if(isset($_SESSION['logfile'])) echo '"'.$_SESSION['logfile'].'"'; else echo '"NO"'; ?>});
-    });
     $('#logModal').on('shown.bs.modal', function(){
-      refreshLog = setInterval(fetchLog ,5000);
+        fetchLog();
+        if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0 || $('.logfile').html().search('No active') == 0)
+            clearInterval(refreshLog);
+        else refreshLog = setInterval(fetchLog, 10000);
     });
     function fetchLog(){
-      $('.logfile').load('/torrent/getInfo.php', {'getLog': <?php if(isset($_SESSION['logfile'])) echo '"'.$_SESSION['logfile'].'"'; else echo '"NO"'; ?>});
+        $('.logfile').load('/torrent/getInfo.php', {'getLog': <?php if(isset($_SESSION['logfile'])) echo '"'.$_SESSION['logfile'].'"'; else echo '"NO"'; ?>});
+        if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0)
+            clearInterval(refreshLog);
     }
     $('#logModal').on('hide.bs.modal', function(){
-      clearInterval(refreshLog);
+        clearInterval(refreshLog);
     });
   });
  </script>
