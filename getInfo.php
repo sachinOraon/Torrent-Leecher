@@ -16,12 +16,7 @@
     echo '<p class="text-monospace font-weight-bold">'.$info.'</p>';
  }
  if(isset($_POST['getLog'])){
-    if($_REQUEST['getLog'] == 'NO')
-        echo 'No active log file found';
-    else
-    {
-        $out=shell_exec('cat '.$_REQUEST['getLog']);
-        echo '<pre>'.$out.'</pre>';
-    }
+    $out=shell_exec('cat '.$_REQUEST['getLog']);
+    echo '<pre style="overflow: hidden; text-overflow: ellipsis;">'.$out.'</pre>';
  }
 ?>

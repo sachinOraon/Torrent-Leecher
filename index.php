@@ -33,6 +33,9 @@
 <body>
 <?php
  session_start();
+ /* create session array to store submitted requests */
+ if(!isset($_SESSION['req_lst']))
+    $_SESSION['req_lst']=array();
  /* take the url and hand it to the leecher script */
  if(isset($_POST['torrent_url']))
  {
@@ -41,7 +44,7 @@
   $cmd='python3 leecher.py '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
   shell_exec($cmd);
   $_SESSION['flag']=true;
-  $_SESSION['logfile']=$logfile;
+  $_SESSION['req_lst'][]=$logfile;
  }
  /* default password for files deletion */
  $pass='qwerty';
@@ -52,6 +55,8 @@
    {
     shell_exec('find /var/www/html/torrent/files -maxdepth 2 -type d,f -user www-data -exec rm -rf {} \;');
     $_SESSION['delflag']=true;
+    while(count($_SESSION['req_lst']))
+      array_pop($_SESSION['req_lst']);
    }
    else $_SESSION['wrngpass']=true;
  }
@@ -106,7 +111,7 @@
 
       <!-- Modal Header -->
       <div class="modal-header">
-        <h4 class="modal-title">Process List</h4>
+        <h4 class="modal-title">Process Info</h4>
         <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
@@ -309,13 +314,25 @@
             <a class="nav-link" href="/torrent"><i class="fas fa-redo-alt"></i> Reload</a><span class="sr-only">(current)</span>
           </li>
           <li class="nav-item">
-            <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a></span>
+            <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a>
           </li>
           <li class="nav-item">
             <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link logBtn" href="#"><i class="fas fa-stream"></i> View Log</a>
+          <li class="nav-item dropdown">
+            <a class="nav-link" href="#" data-toggle="dropdown"><i class="fas fa-list-ul"></i> View Log</a>
+            <div class="dropdown-menu">
+                <?php
+                if(count($_SESSION['req_lst'])){
+                    $i=1;
+                    foreach($_SESSION['req_lst'] as $file){
+                        echo '<a class="dropdown-item font-weight-bold text-monospace viewLogModal" href="#" data-logfile="'.$file.'">File '.$i.'</a>';
+                        $i++;
+                    }
+                }
+                else echo '<span class="dropdown-item font-weight-bold text-monospace">No url submitted</span>';
+                ?>
+            </div>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
@@ -460,8 +477,10 @@
         $('.processinfo').load('/torrent/getInfo.php', {"getProcess": true} );
     }
     // Display log modal
-    $('.logBtn').on('click', function(){
+    var logFile;
+    $('.viewLogModal').on('click', function(){
         $('#logModal').modal('show');
+        logFile=$(this).data('logfile');
     });
     $('#logModal').on('shown.bs.modal', function(){
         fetchLog();
@@ -470,7 +489,7 @@
         else refreshLog = setInterval(fetchLog, 1000);
     });
     function fetchLog(){
-        $('.logfile').load('/torrent/getInfo.php', {'getLog': <?php if(isset($_SESSION['logfile'])) echo '"'.$_SESSION['logfile'].'"'; else echo '"NO"'; ?>});
+        $('.logfile').load('/torrent/getInfo.php', {'getLog': logFile});
         if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0 || $('.logfile').html().search('No active') == 0)
             clearInterval(refreshLog);
     }
@@ -483,15 +502,19 @@
  /* display the request submission dialog */
  if(isset($_SESSION['flag'])){
   echo '<script type="text/javascript">$("#myModal").modal({backdrop: "static"});</script>';
+  unset($_SESSION['flag']);
  }
  /* display the wrong password dialog */
- if(isset($_SESSION['delflag']) || isset($_SESSION['wrngpass']))
-  echo '<script type="text/javascript">$("#PassMsg").modal({backdrop: "static"});</script>';
+ if(isset($_SESSION['delflag']) || isset($_SESSION['wrngpass'])){
+    echo '<script type="text/javascript">$("#PassMsg").modal({backdrop: "static"});</script>';
+    unset($_SESSION['delflag']);
+    unset($_SESSION['wrngpass']);
+ }
  /* display the list of files dialog */
- if(isset($_SESSION['listFiles']))
-  echo '<script type="text/javascript">$("#showFiles").modal({backdrop: "static"});</script>';
- session_unset();
- session_destroy();
+ if(isset($_SESSION['listFiles'])){
+    echo '<script type="text/javascript">$("#showFiles").modal({backdrop: "static"});</script>';
+    unset($_SESSION['listFiles']);
+ }
 ?>
 </body>
 
