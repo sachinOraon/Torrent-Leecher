@@ -1,6 +1,7 @@
 import libtorrent as lt
 import time
 import sys
+import os
 from datetime import datetime
 
 ses = lt.session()
@@ -21,7 +22,7 @@ handle = lt.add_magnet_uri(ses, link, params)
 ses.start_dht()
 start=datetime.now()
 start_time=start.strftime("%d/%m/%Y %H:%M:%S")
-f.write('[*] Getting file info ['+start_time+']\n')
+f.write('[*] ['+start_time+']\n[*] Getting file info\n')
 f.flush()
 while (not handle.has_metadata()):
     WAIT_CNT += 1
@@ -33,12 +34,14 @@ while (not handle.has_metadata()):
 f.write('[*] Name : '+handle.status().name+'\n    Size : %d MB\n' % round(handle.status().total_wanted / 1000000))
 f.flush()
 while (handle.status().state != lt.torrent_status.seeding):
-    time.sleep(10)
+    time.sleep(1)
     s = handle.status()
-    f.write('[*]%4d%% [Speed:%6d KB/s|Seeds:%3d|Peers:%3d] [%s]\n' % (s.progress * 100, round(s.download_rate / 1024), s.num_seeds, s.num_peers, s.state))
+    f.write('[*]%4d%% [Speed:%5d KB/s|Seeds:%3d|Peers:%3d]' % (s.progress * 100, round(s.download_rate / 1024), s.num_seeds, s.num_peers))
     f.flush()
+    f.seek(f.tell()-47, os.SEEK_SET)
 end=datetime.now()
 end_time=end.strftime("%d/%m/%Y %H:%M:%S")
-f.write('[*] Completed ['+end_time+']\n')
+f.seek(0, os.SEEK_END)
+f.write('\n[*] Completed\n[*] ['+end_time+']')
 f.close()
 sys.exit()

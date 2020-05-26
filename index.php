@@ -467,7 +467,7 @@
         fetchLog();
         if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0 || $('.logfile').html().search('No active') == 0)
             clearInterval(refreshLog);
-        else refreshLog = setInterval(fetchLog, 10000);
+        else refreshLog = setInterval(fetchLog, 1000);
     });
     function fetchLog(){
         $('.logfile').load('/torrent/getInfo.php', {'getLog': <?php if(isset($_SESSION['logfile'])) echo '"'.$_SESSION['logfile'].'"'; else echo '"NO"'; ?>});
