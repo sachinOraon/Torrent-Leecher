@@ -19,4 +19,17 @@
     $out=shell_exec('cat '.$_REQUEST['getLog']);
     echo '<pre style="overflow: hidden; text-overflow: ellipsis;">'.$out.'</pre>';
  }
+ if(isset($_POST['getFileName'])){
+    $found=shell_exec('grep -c "Name : " '.$_REQUEST['getFileName']);
+    $failed=shell_exec('grep -c "Process Terminated" '.$_REQUEST['getFileName']);
+    if($found == 1){
+        $cmd='grep -oP "(?<=Name : ).*" '.$_REQUEST['getFileName'];
+        //$cmd='grep "Name : " '.$_REQUEST['getFileName'].' | cut -d":" -f2';
+        $fname=shell_exec($cmd);
+        echo $fname;
+    }
+    else if($failed == 1)
+        echo '[ Failed to download ]';
+    else echo '[ Getting file info ]';
+ }
 ?>

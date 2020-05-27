@@ -320,13 +320,13 @@
             <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link" href="#" data-toggle="dropdown"><i class="fas fa-list-ul"></i> View Log</a>
+            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-list-ul"></i> Status</a>
             <div class="dropdown-menu">
                 <?php
                 if(count($_SESSION['req_lst'])){
                     $i=1;
                     foreach($_SESSION['req_lst'] as $file){
-                        echo '<a class="dropdown-item font-weight-bold text-monospace viewLogModal" href="#" data-logfile="'.$file.'">File '.$i.'</a>';
+                        echo '<a class="dropdown-item font-weight-bold text-monospace viewLogModal" href="#" data-logfile="'.$file.'">'.$i.'. <span class="status">[ Getting file info ]</span></a>';
                         $i++;
                     }
                 }
@@ -495,6 +495,16 @@
     }
     $('#logModal').on('hide.bs.modal', function(){
         clearInterval(refreshLog);
+    });
+    // Get file name info for dropdown list
+    $(".dropdown-toggle").dropdown();
+    $('.dropdown > a').on('click', function(){
+        $('.dropdown-menu > a').each(function(){
+            var logfile=$(this).data('logfile');
+            var status=$(this).find('.status').html();
+            if(status.search('Getting file') >= 0)
+                $(this).find('.status').load('/torrent/getInfo.php', {'getFileName': logfile});
+        });
     });
   });
  </script>
