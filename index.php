@@ -260,7 +260,7 @@
                 if(count($_SESSION['req_lst'])){
                     $i=1;
                     foreach($_SESSION['req_lst'] as $file){
-                        echo '<a class="dropdown-item font-weight-bold text-monospace viewLogModal" href="#" data-logfile="'.$file.'">'.$i.'. <span class="status">[ Getting file info ]</span></a>';
+                        echo '<a class="dropdown-item font-weight-bold text-monospace viewLogModal" href="#" data-logfile="'.$file.'">'.$i.'. <span class="fname">[ Getting file info ]</span></a>';
                         $i++;
                     }
                 }
@@ -411,7 +411,7 @@
                 document.getElementById('submitUrl').reset();
                 if($('.default-item').length)
                     $('.default-item').remove();
-                $('.dropdown-menu').append('<a class="dropdown-item font-weight-bold text-monospace" href="#" data-logfile="'+response.logfile+'">'+response.index+'. <span class="status">[ Getting file info ]</span></a>');
+                $('.dropdown-menu').append('<a class="dropdown-item font-weight-bold text-monospace" href="#" data-logfile="'+response.logfile+'">'+response.index+'. <span class="fname">[ Getting file info ]</span></a>');
                 $('.dropdown-menu a:last').on('click', function(){
                     logFile=$(this).data('logfile');
                     $('#logModal').modal('show');
@@ -583,15 +583,16 @@
     }
     $('#logModal').on('hide.bs.modal', function(){
         clearInterval(refreshLog);
+        $('.logfile pre').remove();
     });
     // Get file name info for dropdown list
     $(".dropdown-toggle").dropdown();
     $('.dropdown > a').on('click', function(){
         $('.dropdown-menu > a').each(function(){
             var logfile=$(this).data('logfile');
-            var status=$(this).find('.status').html();
-            if(status.search('Getting file') >= 0)
-                $(this).find('.status').load('/torrent/getInfo.php', {'getFileName': logfile});
+            var fname=$(this).find('.fname').html();
+            if(fname.search('Getting file') >= 0)
+                $(this).find('.fname').load('/torrent/getInfo.php', {'getFileName': logfile});
         });
     });
   });
