@@ -2,7 +2,7 @@
 A simple web interface for downloading torrent files. Just provide the `magnet` link or `.torrent` file url and sit back. The request is forwaded to a python script that gets the job done. This is very minimalistic implementation of python's `libtorrent` library along with `PHP` and `jQuery`. File browsing is provided by `h5ai` file indexer that has many great features.
 
 - Home Page
-<p align="center"><img src="img/snap_shot.png"></p>
+<p align="center"><img src="img/snap_shot.JPG"></p>
 
 - Steps to setup
 1. Clone this repository to `/var/www/html/torrent`
