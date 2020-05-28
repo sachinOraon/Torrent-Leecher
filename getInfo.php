@@ -44,4 +44,15 @@
   $response->index=count($_SESSION['req_lst']);
   echo json_encode($response);
  }
+ if(isset($_POST['purgePass']))
+ {
+   if($_REQUEST['purgePass'] == $_SESSION['pass'])
+   {
+    shell_exec('find /var/www/html/torrent/files -maxdepth 2 -type d,f -user www-data -exec rm -rf {} \;');
+    while(count($_SESSION['req_lst']))
+      array_pop($_SESSION['req_lst']);
+    echo 'done';
+   }
+   else echo 'wrongPass';
+ }
 ?>

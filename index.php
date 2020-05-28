@@ -37,19 +37,7 @@
  if(!isset($_SESSION['req_lst']))
     $_SESSION['req_lst']=array();
  /* default password for files deletion */
- $pass='qwerty';
- /* purge files */
- if(isset($_POST['purge']))
- {
-   if($_POST['purge'] == $pass)
-   {
-    shell_exec('find /var/www/html/torrent/files -maxdepth 2 -type d,f -user www-data -exec rm -rf {} \;');
-    $_SESSION['delflag']=true;
-    while(count($_SESSION['req_lst']))
-      array_pop($_SESSION['req_lst']);
-   }
-   else $_SESSION['wrngpass']=true;
- }
+ $_SESSION['pass']='qwerty';
  /* get the list of files */
  if(isset($_POST['listFiles']))
  {
@@ -176,19 +164,19 @@
        <div class="alert alert-danger">
         Purging file will remove all the downloaded files and logs from the server. Use this to free up space in one go.
        </div>
-       <form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>'>
+       <form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>' id='purgeForm'>
         <div class="form-group">
          <label for="pwd">Password:</label>
          <input type="password" class="form-control" placeholder="Enter password" id="pwd" name='purge' required>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="button" class="btn btn-primary">Submit</button>
        </form>
       </div>
     </div>
   </div>
 </div>
 <!-- The Modal -->
-<div class="modal fade" id="PassMsg">
+<div class="modal fade" id="successModal">
   <div class="modal-dialog modal-sm">
     <div class="modal-content">
 
@@ -199,14 +187,7 @@
       </div>
 
       <!-- Modal body -->
-      <div class="modal-body">
-      <?php
-       if(isset($_SESSION['delflag']) && $_SESSION['delflag'] == true)
-        echo '<h6 class="text-success font-weight-bold">Files Deleted Successfully</h6>';
-       if(isset($_SESSION['wrngpass']) && $_SESSION['wrngpass'] == true)
-        echo '<h6 class="text-danger font-weight-bold">Wrong Password Entered</h6>';
-      ?>
-      </div>
+      <div class="modal-body"><h6 class="text-success font-weight-bold">Files Deleted Successfully</h6></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -445,11 +426,11 @@
             $('input[name="torrent_url"]').tooltip({
                 trigger: "click",
                 html: true,
-                title: '<h6 class="font-weight-bold">Empty URL given :(</h6>',
+                title: '<h6 class="font-weight-bold">Empty URL given</h6>',
                 placement: "top"
             });
             $('input[name="torrent_url"]').tooltip('show');
-            setTimeout(() => { $('input[name="torrent_url"]').tooltip('dispose'); }, 1000);
+            setTimeout(() => { $('input[name="torrent_url"]').tooltip('dispose'); }, 2000);
         }
         else
         {
@@ -476,6 +457,39 @@
             }
           });
         }
+    });
+    // Purge files function
+    $('#purgeForm button').on('click', function(){
+        $.ajax({
+            url: '/torrent/getInfo.php',
+            type: 'POST',
+            data: {purgePass: $('#pwd').val()},
+            success: function(response)
+            {
+                if(response == 'done')
+                {
+                    $('#PurgeModal').modal('hide');
+                    $('#successModal').modal('show');
+                }
+                else if(response == 'wrongPass')
+                {
+                    document.getElementById('purgeForm').reset();
+                    $('#pwd').tooltip({
+                        trigger: "click",
+                        html: true,
+                        title: '<h6 class="font-weight-bold">Incorrect password</h6>',
+                        placement: "top"
+                    });
+                    $('#pwd').tooltip('show');
+                    setTimeout(() => { $('#pwd').tooltip('dispose'); }, 2000);
+                }
+            },
+            error: function(xhr, status, error)
+            {
+                var errorMessage = xhr.status + ': ' + xhr.statusText;
+                window.alert('Error - ' + errorMessage);
+            }
+        });
     });
     // Display processLst modal and fetch running process info
     $('.pbtn').on('click', function(){
