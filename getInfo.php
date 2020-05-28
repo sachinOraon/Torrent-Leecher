@@ -1,4 +1,5 @@
 <?php
+ session_start();
  if($_REQUEST['getProcess'] == true){
     $info = shell_exec('ps -o pid,etime,%mem,%cpu,cmd -C python3');
     $count = shell_exec('ps -C python3 | wc -l');
@@ -31,5 +32,16 @@
     else if($failed == 1)
         echo '[ Failed to download ]';
     else echo '[ Getting file info ]';
+ }
+ if(isset($_POST['torrent_url']))
+ {
+  $url="'".$_POST['torrent_url']."'";
+  $logfile='/var/www/html/torrent/files/_log/'.time().'.txt';
+  $cmd='python3 leecher.py '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
+  shell_exec($cmd);
+  $_SESSION['req_lst'][]=$logfile;
+  $response->logfile=$logfile;
+  $response->index=count($_SESSION['req_lst']);
+  echo json_encode($response);
  }
 ?>

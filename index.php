@@ -36,16 +36,6 @@
  /* create session array to store submitted requests */
  if(!isset($_SESSION['req_lst']))
     $_SESSION['req_lst']=array();
- /* take the url and hand it to the leecher script */
- if(isset($_POST['torrent_url']))
- {
-  $url="'".trim($_POST['torrent_url'])."'";
-  $logfile='/var/www/html/torrent/files/_log/'.time().'.txt';
-  $cmd='python3 leecher.py '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
-  shell_exec($cmd);
-  $_SESSION['flag']=true;
-  $_SESSION['req_lst'][]=$logfile;
- }
  /* default password for files deletion */
  $pass='qwerty';
  /* purge files */
@@ -330,7 +320,7 @@
                         $i++;
                     }
                 }
-                else echo '<span class="dropdown-item font-weight-bold text-monospace">No url submitted</span>';
+                else echo '<span class="dropdown-item default-item font-weight-bold text-monospace">No url submitted</span>';
                 ?>
             </div>
           </li>
@@ -446,9 +436,10 @@
         // ajax call to fetch storage info
         $('.storage-info').load('/torrent/getInfo.php', {"getStorage": true} );
     });
-    // Avoid taking empty data
+    // Download button click event
     $('.submitBtn').on('click', function(){
         var url=$('input[name="torrent_url"]').val().trim();
+        // Avoid taking empty data
         if(url === ""){
             // display alert tooltip
             $('input[name="torrent_url"]').tooltip({
@@ -460,7 +451,31 @@
             $('input[name="torrent_url"]').tooltip('show');
             setTimeout(() => { $('input[name="torrent_url"]').tooltip('dispose'); }, 1000);
         }
-        else $('#submitUrl').submit();
+        else
+        {
+          // send the request to server
+          $.ajax({
+            url: '/torrent/getInfo.php',
+            type: 'POST',
+            data: {torrent_url: $('input[name="torrent_url"]').val().trim()},
+            dataType: 'json',
+            success: function(response){
+                $("#myModal").modal('show');
+                document.getElementById('submitUrl').reset();
+                if($('.default-item').length)
+                    $('.default-item').remove();
+                $('.dropdown-menu').append('<a class="dropdown-item font-weight-bold text-monospace" href="#" data-logfile="'+response.logfile+'">'+response.index+'. <span class="status">[ Getting file info ]</span></a>');
+                $('.dropdown-menu a:last').on('click', function(){
+                    logFile=$(this).data('logfile');
+                    $('#logModal').modal('show');
+                });
+            },
+            error: function(xhr, status, error){
+                var errorMessage = xhr.status + ': ' + xhr.statusText;
+                window.alert('Error - ' + errorMessage);
+            }
+          });
+        }
     });
     // Display processLst modal and fetch running process info
     $('.pbtn').on('click', function(){
@@ -509,11 +524,6 @@
   });
  </script>
 <?php
- /* display the request submission dialog */
- if(isset($_SESSION['flag'])){
-  echo '<script type="text/javascript">$("#myModal").modal({backdrop: "static"});</script>';
-  unset($_SESSION['flag']);
- }
  /* display the wrong password dialog */
  if(isset($_SESSION['delflag']) || isset($_SESSION['wrngpass'])){
     echo '<script type="text/javascript">$("#PassMsg").modal({backdrop: "static"});</script>';
