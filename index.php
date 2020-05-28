@@ -36,27 +36,6 @@
  /* create session array to store submitted requests */
  if(!isset($_SESSION['req_lst']))
     $_SESSION['req_lst']=array();
- /* default password for files deletion */
- $_SESSION['pass']='qwerty';
- /* get the list of files */
- if(isset($_POST['listFiles']))
- {
-   if($_POST['listFiles'] == $pass)
-   {
-     $_SESSION['listFiles']=true;
-     $files=array_slice(scandir('/var/www/html/torrent/files/'), 2);
-   }
-   else $_SESSION['wrngpass']=true;
- }
- /* delete the selected files */
- if(!empty($_POST['filePool']))
- {
-  foreach($_POST['filePool'] as $delMe)
-  {
-    shell_exec('rm -rf "files/'.$delMe.'"');
-  }
-  $_SESSION['delflag']=true;
- }
 ?>
 <!-- The Modal -->
 <div class="modal fade" id="myModal">
@@ -214,12 +193,12 @@
        <div class="alert alert-info">
         The next page will bring up a list of user files stored on the server and provides an option to select and delete unused files.
        </div>
-       <form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>'>
+       <form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>' id="delFileForm">
         <div class="form-group">
          <label for="pwd">Password:</label>
          <input type="password" class="form-control" placeholder="Enter password" id="pwdDf" name='listFiles' required>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="button" class="btn btn-primary">Submit</button>
        </form>
       </div>
     </div>
@@ -238,26 +217,13 @@
       </div>
 
       <!-- Modal body -->
-      <div class="modal-body">
-        <form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>'>
-         <?php
-         $num_files=0;
-         for($i=0; $i<count($files); $i++)
-         {
-         	if($files[$i] != '_h5ai' && $files[$i] != '_log')
-         	{
-         		echo '<div class="custom-control custom-checkbox">';
-         		echo '<input type="checkbox" class="custom-control-input" id="check'.$i.'" name="filePool[]" value="'.$files[$i].'">';
-         		echo '<label class="custom-control-label"'.'for="check'.$i.'">'.$files[$i].'</label></div>';
-         		$num_files++;
-         	}
-         }
-         if($num_files)
-         	echo '<hr><button type="submit" class="btn btn-danger">Delete</button>';
-         else echo '<p class="text-danger font-weight-bold">NO files available</p>';
-         ?>
-        </form>
+      <div class="modal-body filelist"></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger d-none delFileBtn">Delete</button>
       </div>
+
     </div>
   </div>
 </div>
@@ -287,9 +253,6 @@
           <li class="nav-item">
             <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
-          </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-list-ul"></i> Status</a>
             <div class="dropdown-menu">
@@ -304,6 +267,9 @@
                 else echo '<span class="dropdown-item default-item font-weight-bold text-monospace">No url submitted</span>';
                 ?>
             </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
@@ -470,6 +436,9 @@
                 {
                     $('#PurgeModal').modal('hide');
                     $('#successModal').modal('show');
+                    $('.dropdown-menu > a').remove();
+                    if(!$('.default-item').length)
+                        $('.dropdown-menu').append('<span class="dropdown-item default-item font-weight-bold text-monospace">No Log available</span>');
                 }
                 else if(response == 'wrongPass')
                 {
@@ -490,6 +459,96 @@
                 window.alert('Error - ' + errorMessage);
             }
         });
+    });
+    // Delete files function
+    $('#delFileForm button').on('click', function(){
+        $.ajax({
+            url: '/torrent/getInfo.php',
+            type: 'POST',
+            data: {delPass: $('#pwdDf').val()},
+            dataType: 'json',
+            success: function(response)
+            {
+                if(response.msg == 'wrongPass')
+                {
+                    document.getElementById('delFileForm').reset();
+                    $('#pwdDf').tooltip({
+                        trigger: "click",
+                        html: true,
+                        title: '<h6 class="font-weight-bold">Incorrect password</h6>',
+                        placement: "top"
+                    });
+                    $('#pwdDf').tooltip('show');
+                    setTimeout(() => { $('#pwdDf').tooltip('dispose'); }, 2000);
+                }
+                else
+                {
+                    $('#freeUpForm').modal('hide');
+                    var idx=1;
+                    for(var i in response){
+                        if(response[i] == '_h5ai' || response[i] == '_log')
+                            continue;
+                        else $('.filelist').append('<div class="custom-control custom-checkbox">'+'<input type="checkbox" class="custom-control-input" value="'+response[i]+'" id="file'+idx+'"><label class="custom-control-label" for="file'+idx+'">'+response[i]+'</label></div>');
+                        idx++;
+                    }
+                    if(idx == 1){
+                        if(!$('.filelist > p').length) $('.filelist').append('<p class="text-danger font-weight-bold">NO files available</p>');
+                        $('.delFileBtn').addClass('d-none');
+                    }
+                    else
+                    {
+                        $('.delFileBtn').removeClass('d-none');
+                        $('.filelist > p').remove();
+                    }
+                    $('#showFiles').modal({show: true, backdrop: 'static'});
+                    $('#showFiles').on('hidden.bs.modal', function(){ $('.filelist > div').remove(); });
+                }
+            },
+            error: function(xhr, status, error)
+            {
+                var errorMessage = xhr.status + ': ' + xhr.statusText;
+                window.alert('Error - ' + errorMessage);
+            }
+        });
+    });
+    $('.delFileBtn').on('click', function(){
+        var delMe=[];
+        $('.filelist input').each(function(){
+            if($(this).prop('checked')){
+                delMe.push($(this).val());
+            }
+        });
+        if(delMe.length)
+        {
+            $.ajax({
+                url: '/torrent/getInfo.php',
+                type: 'POST',
+                data: {filelist: JSON.stringify(delMe)},
+                success: function(response)
+                {
+                    if(response == 'done'){
+                        $('#showFiles').modal('hide');
+                        $('#successModal').modal('show');
+                    }
+                },
+                error: function(xhr, status, error)
+                {
+                    var errorMessage = xhr.status + ': ' + xhr.statusText;
+                    window.alert('Error - ' + errorMessage);
+                }
+            });
+        }
+        else
+        {
+            $('.delFileBtn').tooltip({
+                trigger: "click",
+                html: true,
+                title: '<h6 class="font-weight-bold">No file selected</h6>',
+                placement: "left"
+            });
+            $('.delFileBtn').tooltip('show');
+            setTimeout(() => { $('.delFileBtn').tooltip('dispose'); }, 2000);
+        }
     });
     // Display processLst modal and fetch running process info
     $('.pbtn').on('click', function(){
@@ -513,13 +572,13 @@
     });
     $('#logModal').on('shown.bs.modal', function(){
         fetchLog();
-        if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0 || $('.logfile').html().search('No active') == 0)
+        if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0)
             clearInterval(refreshLog);
         else refreshLog = setInterval(fetchLog, 1000);
     });
     function fetchLog(){
         $('.logfile').load('/torrent/getInfo.php', {'getLog': logFile});
-        if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0 || $('.logfile').html().search('No active') == 0)
+        if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0)
             clearInterval(refreshLog);
     }
     $('#logModal').on('hide.bs.modal', function(){
@@ -537,19 +596,7 @@
     });
   });
  </script>
-<?php
- /* display the wrong password dialog */
- if(isset($_SESSION['delflag']) || isset($_SESSION['wrngpass'])){
-    echo '<script type="text/javascript">$("#PassMsg").modal({backdrop: "static"});</script>';
-    unset($_SESSION['delflag']);
-    unset($_SESSION['wrngpass']);
- }
- /* display the list of files dialog */
- if(isset($_SESSION['listFiles'])){
-    echo '<script type="text/javascript">$("#showFiles").modal({backdrop: "static"});</script>';
-    unset($_SESSION['listFiles']);
- }
-?>
+
 </body>
 
 </html>

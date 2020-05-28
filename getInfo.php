@@ -46,7 +46,7 @@
  }
  if(isset($_POST['purgePass']))
  {
-   if($_REQUEST['purgePass'] == $_SESSION['pass'])
+   if($_REQUEST['purgePass'] == 'qwerty')
    {
     shell_exec('find /var/www/html/torrent/files -maxdepth 2 -type d,f -user www-data -exec rm -rf {} \;');
     while(count($_SESSION['req_lst']))
@@ -54,5 +54,24 @@
     echo 'done';
    }
    else echo 'wrongPass';
+ }
+ if(isset($_POST['delPass']))
+ {
+   if($_REQUEST['delPass'] == 'qwerty')
+   {
+    $files=array_slice(scandir('/var/www/html/torrent/files/'), 2);
+    echo json_encode($files);
+   }
+   else
+   {
+    $err->msg='wrongPass';
+    echo json_encode($err);
+   }
+ }
+ if(isset($_POST['filelist'])){
+  $delMe=json_decode($_REQUEST['filelist']);
+  foreach($delMe as $file)
+    shell_exec('rm -rf "files/'.$file.'"');
+  echo 'done';
  }
 ?>
