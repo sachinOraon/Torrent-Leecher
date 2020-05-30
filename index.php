@@ -27,6 +27,9 @@
       font-weight: bold;
       font-style: normal;
     }
+    .modal-open .navbar-expand-lg {
+        padding-right: 16px !important;
+    }
   </style>
 </head>
 
@@ -248,7 +251,7 @@
         <!-- Left -->
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
-            <a class="nav-link" href="/torrent"><i class="fas fa-redo-alt"></i> Reload</a><span class="sr-only">(current)</span>
+            <a class="nav-link" href="index.php"><i class="fas fa-redo-alt"></i> Reload</a><span class="sr-only">(current)</span>
           </li>
           <li class="nav-item">
             <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a>
@@ -381,7 +384,7 @@
     });
     $('#storageInfo').on('show.bs.modal', function(){
         // ajax call to fetch storage info
-        $('.storage-info').load('/torrent/getInfo.php', {"getStorage": true} );
+        $('.storage-info').load('getInfo.php', {"getStorage": true} );
     });
     // Download button click event
     $('.submitBtn').on('click', function(){
@@ -402,7 +405,7 @@
         {
           // send the request to server
           $.ajax({
-            url: '/torrent/getInfo.php',
+            url: 'getInfo.php',
             type: 'POST',
             data: {torrent_url: $('input[name="torrent_url"]').val().trim()},
             dataType: 'json',
@@ -427,7 +430,7 @@
     // Purge files function
     $('#purgeForm button').on('click', function(){
         $.ajax({
-            url: '/torrent/getInfo.php',
+            url: 'getInfo.php',
             type: 'POST',
             data: {purgePass: $('#pwd').val()},
             success: function(response)
@@ -435,7 +438,7 @@
                 if(response == 'done')
                 {
                     $('#PurgeModal').modal('hide');
-                    $('#successModal').modal('show');
+                    $('#PurgeModal').on('hidden.bs.modal', function(){$('#successModal').modal('show'); $('#PurgeModal').off('hidden.bs.modal');});
                     $('.dropdown-menu > a').remove();
                     if(!$('.default-item').length)
                         $('.dropdown-menu').append('<span class="dropdown-item default-item font-weight-bold text-monospace">No Log available</span>');
@@ -463,7 +466,7 @@
     // Delete files function
     $('#delFileForm button').on('click', function(){
         $.ajax({
-            url: '/torrent/getInfo.php',
+            url: 'getInfo.php',
             type: 'POST',
             data: {delPass: $('#pwdDf').val()},
             dataType: 'json',
@@ -500,8 +503,8 @@
                         $('.delFileBtn').removeClass('d-none');
                         $('.filelist > p').remove();
                     }
-                    $('#showFiles').modal({show: true, backdrop: 'static'});
-                    $('#showFiles').on('hidden.bs.modal', function(){ $('.filelist > div').remove(); });
+                    $('#freeUpForm').on('hidden.bs.modal', function(){$('#showFiles').modal({show: true, backdrop: 'static'}); $('#freeUpForm').off('hidden.bs.modal')});
+                    $('#showFiles').on('hidden.bs.modal', function(){ $('.filelist > div').remove(); $('#showFiles').off('hidden.bs.modal')});
                 }
             },
             error: function(xhr, status, error)
@@ -521,14 +524,14 @@
         if(delMe.length)
         {
             $.ajax({
-                url: '/torrent/getInfo.php',
+                url: 'getInfo.php',
                 type: 'POST',
                 data: {filelist: JSON.stringify(delMe)},
                 success: function(response)
                 {
                     if(response == 'done'){
                         $('#showFiles').modal('hide');
-                        $('#successModal').modal('show');
+                        $('#showFiles').on('hidden.bs.modal', function(){$('#successModal').modal('show'); $('#showFiles').off('hidden.bs.modal')});
                     }
                 },
                 error: function(xhr, status, error)
@@ -562,7 +565,7 @@
         clearInterval(refreshProcess);
     });
     function fetchProcess(){
-        $('.processinfo').load('/torrent/getInfo.php', {"getProcess": true} );
+        $('.processinfo').load('getInfo.php', {"getProcess": true} );
     }
     // Display log modal
     var logFile;
@@ -577,7 +580,7 @@
         else refreshLog = setInterval(fetchLog, 1000);
     });
     function fetchLog(){
-        $('.logfile').load('/torrent/getInfo.php', {'getLog': logFile});
+        $('.logfile').load('getInfo.php', {'getLog': logFile});
         if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0)
             clearInterval(refreshLog);
     }
@@ -592,7 +595,7 @@
             var logfile=$(this).data('logfile');
             var fname=$(this).find('.fname').html();
             if(fname.search('Getting file') >= 0)
-                $(this).find('.fname').load('/torrent/getInfo.php', {'getFileName': logfile});
+                $(this).find('.fname').load('getInfo.php', {'getFileName': logfile});
         });
     });
   });

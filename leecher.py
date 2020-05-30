@@ -27,18 +27,18 @@ f.flush()
 while (not handle.has_metadata()):
     WAIT_CNT += 1
     time.sleep(1)
-    if WAIT_CNT == 180: # wait for 3mins
+    if WAIT_CNT == 300: # wait for 5mins
        f.write('[*] '+link+'\n[*] Unable to get file info due to very few seeds\n[*] Process Terminated')
        f.close()
        sys.exit()
-f.write('[*] Name : '+handle.status().name+'\n    Size : %d MB\n' % round(handle.status().total_wanted / 1000000))
+f.write('[*] Name : '+handle.status().name+'\n[*] Size : %d MB\n' % round(handle.status().total_wanted / 1000000))
 f.flush()
 while (handle.status().state != lt.torrent_status.seeding):
     time.sleep(1)
     s = handle.status()
-    f.write('[*]%4d%% [Speed:%5d KB/s|Seeds:%3d|Peers:%3d]' % (s.progress * 100, round(s.download_rate / 1024), s.num_seeds, s.num_peers))
+    f.write('[*] Seeds:%3d\n[*] Peers:%3d\n[*] Speed:%5d KB/s\n[*] %3d%%' % (s.num_seeds, s.num_peers, round(s.download_rate / 1024), round(s.progress*100)))
     f.flush()
-    f.seek(f.tell()-47, os.SEEK_SET)
+    f.seek(f.tell()-57, os.SEEK_SET)
 end=datetime.now()
 end_time=end.strftime("%d/%m/%Y %H:%M:%S")
 f.seek(0, os.SEEK_END)

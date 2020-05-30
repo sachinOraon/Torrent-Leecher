@@ -41,7 +41,7 @@
  if(isset($_POST['torrent_url']))
  {
   $url="'".$_POST['torrent_url']."'";
-  $logfile='/var/www/html/torrent/files/_log/'.time().'.txt';
+  $logfile='files/_log/'.time().'.txt';
   $cmd='python3 leecher.py '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
   shell_exec($cmd);
   $_SESSION['req_lst'][]=$logfile;
@@ -53,7 +53,7 @@
  {
    if($_REQUEST['purgePass'] == $pass)
    {
-    shell_exec('find /var/www/html/torrent/files -maxdepth 2 -type d,f -user www-data -exec rm -rf {} \;');
+    shell_exec('find files -maxdepth 2 -type d,f -user www-data -exec rm -rf {} \;');
     while(count($_SESSION['req_lst']))
       array_pop($_SESSION['req_lst']);
     echo 'done';
@@ -64,7 +64,7 @@
  {
    if($_REQUEST['delPass'] == $pass)
    {
-    $files=array_slice(scandir('/var/www/html/torrent/files/'), 2);
+    $files=array_slice(scandir('files/'), 2);
     echo json_encode($files);
    }
    else
