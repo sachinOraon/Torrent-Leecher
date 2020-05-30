@@ -1,9 +1,10 @@
 <?php
  session_start();
+ $pass='qwerty';
  if($_REQUEST['getProcess'] == true){
-    $info = shell_exec('ps -o pid,etime,%mem,%cpu,cmd -C python3');
-    $count = shell_exec('ps -C python3 | wc -l');
-    if($count > 1)
+    $info = shell_exec('ps -u www-data > files/_log/.psraw && ps -o pid,etime,%mem,%cpu,cmd | head -n1 > files/_log/.psinfo && for line in $(grep -n python3 files/_log/.psraw | cut -d":" -f1); do ps -o pid,etime,%mem,%cpu,cmd -u www-data | head -n${line} | tail -n1 >> files/_log/.psinfo; done && cat files/_log/.psinfo');
+    $count = shell_exec('ps -u www-data | grep -c "python3"');
+    if($count > 0)
         echo '<pre>'.$info.'</pre>';
     else echo '<p class="text-success font-weight-bold">No active process found</p>';
  }
@@ -13,7 +14,11 @@
     $arr=explode(" ", $str);
     $info='';
     for($i=0, $j=4; $i<count($arr)/2; $i++, $j++)
-        $info .= $arr[$i].' : '.$arr[$j].'<br>';
+    {
+        if($i != 2)
+            $info .= $arr[$i].' &nbsp;: '.$arr[$j].'<br>';
+        else $info .= $arr[$i].' : '.$arr[$j].'<br>';
+    }
     echo '<p class="text-monospace font-weight-bold">'.$info.'</p>';
  }
  if(isset($_POST['getLog'])){
@@ -46,7 +51,7 @@
  }
  if(isset($_POST['purgePass']))
  {
-   if($_REQUEST['purgePass'] == 'qwerty')
+   if($_REQUEST['purgePass'] == $pass)
    {
     shell_exec('find /var/www/html/torrent/files -maxdepth 2 -type d,f -user www-data -exec rm -rf {} \;');
     while(count($_SESSION['req_lst']))
@@ -57,7 +62,7 @@
  }
  if(isset($_POST['delPass']))
  {
-   if($_REQUEST['delPass'] == 'qwerty')
+   if($_REQUEST['delPass'] == $pass)
    {
     $files=array_slice(scandir('/var/www/html/torrent/files/'), 2);
     echo json_encode($files);
