@@ -76,7 +76,7 @@
       </div>
 
       <!-- Modal body -->
-      <div class="modal-body processinfo"></div>
+      <div class="modal-body processinfo"><div class="spinner-grow text-info"></div></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -98,7 +98,7 @@
       </div>
 
       <!-- Modal body -->
-      <div class="modal-body storage-info"></div>
+      <div class="modal-body storage-info"><div class="spinner-grow text-info"></div></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -120,7 +120,7 @@
       </div>
 
       <!-- Modal body -->
-      <div class="modal-body logfile"></div>
+      <div class="modal-body logfile"><div class="spinner-grow text-success"></div></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -386,6 +386,9 @@
         // ajax call to fetch storage info
         $('.storage-info').load('getInfo.php', {"getStorage": true} );
     });
+    $('#storageInfo').on('hidden.bs.modal', function(){
+        $('.storage-info').html('<div class="spinner-grow text-info"></div>');
+    });
     // Download button click event
     $('.submitBtn').on('click', function(){
         var url=$('input[name="torrent_url"]').val().trim();
@@ -567,6 +570,9 @@
     function fetchProcess(){
         $('.processinfo').load('getInfo.php', {"getProcess": true} );
     }
+    $('#processLst').on('hidden.bs.modal', function(){
+        $('.processinfo').html('<div class="spinner-grow text-info"></div>');
+    });
     // Display log modal
     var logFile;
     $('.viewLogModal').on('click', function(){
@@ -587,6 +593,9 @@
     $('#logModal').on('hide.bs.modal', function(){
         clearInterval(refreshLog);
         $('.logfile pre').remove();
+    });
+    $('#logModal').on('hidden.bs.modal', function(){
+        $('.logfile').html('<div class="spinner-grow text-success"></div>');
     });
     // Get file name info for dropdown list
     $(".dropdown-toggle").dropdown();

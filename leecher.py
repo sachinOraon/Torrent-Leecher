@@ -22,13 +22,13 @@ handle = lt.add_magnet_uri(ses, link, params)
 ses.start_dht()
 start=datetime.now()
 start_time=start.strftime("%d/%m/%Y %H:%M:%S")
-f.write('[*] ['+start_time+']\n[*] Getting file info\n')
+f.write('[*] ['+start_time+']\n[*] Getting file info\n[*] URL  : '+link+'\n')
 f.flush()
 while (not handle.has_metadata()):
     WAIT_CNT += 1
     time.sleep(1)
     if WAIT_CNT == 300: # wait for 5mins
-       f.write('[*] '+link+'\n[*] Unable to get file info due to very few seeds\n[*] Process Terminated')
+       f.write('[*] Unable to get file info due to very few seeds\n[*] Process Terminated')
        f.close()
        sys.exit()
 f.write('[*] Name : '+handle.status().name+'\n[*] Size : %d MB\n' % round(handle.status().total_wanted / 1000000))
