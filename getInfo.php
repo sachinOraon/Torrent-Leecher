@@ -64,7 +64,7 @@
  {
    if($_REQUEST['delPass'] == $pass)
    {
-    $files=array_slice(scandir('files/'), 2);
+    $files=scandir('files');
     echo json_encode($files);
    }
    else

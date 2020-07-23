@@ -492,7 +492,7 @@
                     $('#freeUpForm').modal('hide');
                     var idx=1;
                     for(var i in response){
-                        if(response[i] == '_h5ai' || response[i] == '_log')
+                        if(response[i] == '_h5ai' || response[i] == '_log' || response[i] == '.' || response[i] == '..')
                             continue;
                         else $('.filelist').append('<div class="custom-control custom-checkbox">'+'<input type="checkbox" class="custom-control-input" value="'+response[i]+'" id="file'+idx+'"><label class="custom-control-label" for="file'+idx+'">'+response[i]+'</label></div>');
                         idx++;
