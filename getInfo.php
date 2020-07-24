@@ -29,14 +29,29 @@
     $found=shell_exec('grep -c "Name : " '.$_REQUEST['getFileName']);
     $failed=shell_exec('grep -c "Process Terminated" '.$_REQUEST['getFileName']);
     if($found == 1){
-        $cmd='grep -oP "(?<=Name : ).*" '.$_REQUEST['getFileName'];
+        $cmd='grep -oP "(?<=Name : ).*" '.$_REQUEST['getFileName'].' | tr -d "\n"';
         //$cmd='grep "Name : " '.$_REQUEST['getFileName'].' | cut -d":" -f2';
         $fname=shell_exec($cmd);
-        echo $fname;
+        $linecnt=shell_exec('wc -l '.$_REQUEST['getFileName'].' | cut -d" " -f1 | tr -d "\n"');
+        if($linecnt > 8)
+          $pcent=shell_exec('head -n9 '.$_REQUEST['getFileName'].' | tail -n1 | tr -d "\n[*] "');
+        else $pcent='0%';
+        $response->fname=$fname;
+        $response->status=$pcent;
     }
-    else if($failed == 1)
-        echo '[ Failed to download ]';
-    else echo '[ Getting file info ]';
+    else if($failed == 1){
+      $response->fname='Failed to download';
+      $response->status='&#128683;';
+    }
+    else{
+      $response->fname='Getting file info';
+      $response->status='<div class="spinner-border text-success spinner-border-sm"></div>';
+    }
+    echo json_encode($response);
+ }
+ if(isset($_POST['getDlPcent'])){
+  $pcent=shell_exec('head -n9 '.$_REQUEST['getDlPcent'].' | tail -n1 | tr -d "\n[*] "');
+  echo '<kbd>'.$pcent.'</kbd>';
  }
  if(isset($_POST['torrent_url']))
  {

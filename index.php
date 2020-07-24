@@ -261,10 +261,8 @@
             <div class="dropdown-menu">
                 <?php
                 if(count($_SESSION['req_lst'])){
-                    $i=1;
                     foreach($_SESSION['req_lst'] as $file){
-                        echo '<a class="dropdown-item font-weight-bold text-monospace viewLogModal" href="#" data-logfile="'.$file.'">'.$i.'. <span class="fname">[ Getting file info ]</span></a>';
-                        $i++;
+                        echo '<a class="dropdown-item viewLogModal" href="#" data-logfile="'.$file.'">'.'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;<span class="fstop"></span>&nbsp;<span class="fname text-monospace">Getting file info</span></a>';
                     }
                 }
                 else echo '<span class="dropdown-item default-item font-weight-bold text-monospace">No url submitted</span>';
@@ -284,7 +282,7 @@
             <a class="nav-link" href="#" data-toggle="modal" data-target="#freeUpForm" data-backdrop="static"><i class="fas fa-trash-alt"></i> Delete Files</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="https://unblockit.me/" target="_blank"><i class="far fa-grin-stars"></i> Torrent Sites</a>
+            <a class="nav-link" href="https://unblockit.id/" target="_blank"><i class="far fa-grin-stars"></i> Torrent Sites</a>
           </li>
         </ul>
 
@@ -417,7 +415,7 @@
                 document.getElementById('submitUrl').reset();
                 if($('.default-item').length)
                     $('.default-item').remove();
-                $('.dropdown-menu').append('<a class="dropdown-item font-weight-bold text-monospace" href="#" data-logfile="'+response.logfile+'">'+response.index+'. <span class="fname">[ Getting file info ]</span></a>');
+                $('.dropdown-menu').append('<a class="dropdown-item" href="#" data-logfile="'+response.logfile+'">'+'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;<span class="fstop"></span>&nbsp;<span class="fname text-monospace">Getting file info</span></a>');
                 $('.dropdown-menu a:last').on('click', function(){
                     logFile=$(this).data('logfile');
                     $('#logModal').modal('show');
@@ -597,16 +595,65 @@
     $('#logModal').on('hidden.bs.modal', function(){
         $('.logfile').html('<div class="spinner-grow text-success"></div>');
     });
-    // Get file name info for dropdown list
+    // Get file name and status info for dropdown list
     $(".dropdown-toggle").dropdown();
-    $('.dropdown > a').on('click', function(){
+    $('.dropdown').on('shown.bs.dropdown', function(){
+        refreshFname = setInterval(getFileName, 1000);
+        refreshPcent = setInterval(getFileStatus, 1000);
+    });
+    $('.dropdown').on('hidden.bs.dropdown', function(){
+        clearInterval(refreshFname);
+        clearInterval(refreshPcent);
+    });
+    function getFileName(){
         $('.dropdown-menu > a').each(function(){
             var logfile=$(this).data('logfile');
-            var fname=$(this).find('.fname').html();
-            if(fname.search('Getting file') >= 0)
-                $(this).find('.fname').load('getInfo.php', {'getFileName': logfile});
+            var fname=$(this).find('.fname');
+            var fstatus=$(this).find('.fstatus');
+            if(fname.html().search('Getting file') >= 0){
+                $.ajax({
+                    url: 'getInfo.php',
+                    type: 'POST',
+                    data: {getFileName: logfile},
+                    dataType: 'json',
+                    success: function(response){
+                        if(response.fname == 'Failed to download'){
+                            fstatus.html(response.status);
+                        }
+                        else if(response.fname != 'Getting file info')
+                            fstatus.html('<kbd>'+response.status+'</kbd>');
+                        fname.html(response.fname);
+                    }
+                });
+            }
         });
-    });
+        var totalReq=$('.dropdown-menu > a').length;
+        var tmp=0;
+        $('.dropdown-menu > a').each(function(){
+            if($(this).find('.fname').text().search('Getting file') < 0)
+                tmp++;
+        });
+        if(tmp == totalReq)
+            clearInterval(refreshFname);
+    }
+    function getFileStatus(){
+        $('.dropdown-menu > a').each(function(){
+            var logfile=$(this).data('logfile');
+            if($(this).find('.fname').html().search('Getting file') < 0 && $(this).find('.fname').html().search('Failed to') < 0){
+                var curPcent=$(this).find('.fstatus').text();
+                if(curPcent.search('100%') < 0)
+                    $(this).find('.fstatus').load('getInfo.php', {'getDlPcent': logfile});
+            }
+        });
+        var totalReq=$('.dropdown-menu > a').length;
+        var tmp=0;
+        $('.dropdown-menu > a').each(function(){
+            if($(this).find('.fstatus').text().search('100%') >= 0)
+                tmp++;
+        });
+        if(tmp == totalReq)
+            clearInterval(refreshPcent);
+    }
   });
  </script>
 
