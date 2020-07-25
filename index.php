@@ -169,7 +169,7 @@
       </div>
 
       <!-- Modal body -->
-      <div class="modal-body"><h6 class="text-success font-weight-bold">Files Deleted Successfully</h6></div>
+      <div class="modal-body"><span class="text-success text-monospace font-weight-bold">Files Deleted Successfully</span></div>
 
       <!-- Modal footer -->
       <div class="modal-footer">
@@ -231,6 +231,30 @@
   </div>
 </div>
 
+<!-- The Modal -->
+<div class="modal fade" id="stopModal">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Alert</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body"><span class="text-danger text-monospace font-weight-bold">Do you want to stop the download?</span></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary btn-sm" id="stopBtn">Yes</button>
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
   <!-- Navbar -->
   <nav class="navbar fixed-top navbar-expand-lg navbar-dark scrolling-navbar">
     <div class="container">
@@ -261,8 +285,10 @@
             <div class="dropdown-menu">
                 <?php
                 if(count($_SESSION['req_lst'])){
+                  $i=1;
                     foreach($_SESSION['req_lst'] as $file){
-                        echo '<a class="dropdown-item viewLogModal" href="#" data-logfile="'.$file.'">'.'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;<span class="fstop"></span>&nbsp;<span class="fname text-monospace">Getting file info</span></a>';
+                        echo '<a class="dropdown-item" href="#" data-logfile="'.$file.'" data-index="'.$i.'">'.'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;&nbsp;<span class="fstop">&#10060;</span>&nbsp;&nbsp;<span class="fname text-monospace viewLogModal">Getting file info</span></a>';
+                        $i++;
                     }
                 }
                 else echo '<span class="dropdown-item default-item font-weight-bold text-monospace">No url submitted</span>';
@@ -380,7 +406,7 @@
     $('.storage_info').on('click', function(){
         $('#storageInfo').modal('show');
     });
-    $('#storageInfo').on('show.bs.modal', function(){
+    $('#storageInfo').on('shown.bs.modal', function(){
         // ajax call to fetch storage info
         $('.storage-info').load('getInfo.php', {"getStorage": true} );
     });
@@ -415,10 +441,15 @@
                 document.getElementById('submitUrl').reset();
                 if($('.default-item').length)
                     $('.default-item').remove();
-                $('.dropdown-menu').append('<a class="dropdown-item" href="#" data-logfile="'+response.logfile+'">'+'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;<span class="fstop"></span>&nbsp;<span class="fname text-monospace">Getting file info</span></a>');
-                $('.dropdown-menu a:last').on('click', function(){
-                    logFile=$(this).data('logfile');
+                $('.dropdown-menu').append('<a class="dropdown-item" href="#" data-logfile="'+response.logfile+'" data-index="'+response.index+'">'+'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;&nbsp;<span class="fstop">&#10060;</span>&nbsp;&nbsp;<span class="fname text-monospace">Getting file info</span></a>');
+                $('.dropdown-menu a:last .fname').on('click', function(){
+                    logFile=$(this).parent().data('logfile');
                     $('#logModal').modal('show');
+                });
+                $('.dropdown-menu a:last .fstop').on('click', function(){
+                  index=$(this).parent().data('index');
+                  logFile=$(this).parent().data('logfile');
+                  $('#stopModal').modal('show');
                 });
             },
             error: function(xhr, status, error){
@@ -496,7 +527,7 @@
                         idx++;
                     }
                     if(idx == 1){
-                        if(!$('.filelist > p').length) $('.filelist').append('<p class="text-danger font-weight-bold">NO files available</p>');
+                        if(!$('.filelist > p').length) $('.filelist').append('<p class="text-danger font-weight-bold text-monospace">NO files available</p>');
                         $('.delFileBtn').addClass('d-none');
                     }
                     else
@@ -575,7 +606,7 @@
     var logFile;
     $('.viewLogModal').on('click', function(){
         $('#logModal').modal('show');
-        logFile=$(this).data('logfile');
+        logFile=$(this).parent().data('logfile');
     });
     $('#logModal').on('shown.bs.modal', function(){
         fetchLog();
@@ -598,7 +629,7 @@
     // Get file name and status info for dropdown list
     $(".dropdown-toggle").dropdown();
     $('.dropdown').on('shown.bs.dropdown', function(){
-        refreshFname = setInterval(getFileName, 1000);
+        refreshFname = setInterval(getFileName, 2000);
         refreshPcent = setInterval(getFileStatus, 1000);
     });
     $('.dropdown').on('hidden.bs.dropdown', function(){
@@ -610,6 +641,7 @@
             var logfile=$(this).data('logfile');
             var fname=$(this).find('.fname');
             var fstatus=$(this).find('.fstatus');
+            var fstop=$(this).find('.fstop');
             if(fname.html().search('Getting file') >= 0){
                 $.ajax({
                     url: 'getInfo.php',
@@ -618,11 +650,14 @@
                     dataType: 'json',
                     success: function(response){
                         if(response.fname == 'Failed to download'){
-                            fstatus.html(response.status);
+                          fstatus.html(response.status);
+                          fname.html(response.fname);
+                          fstop.html('');
                         }
-                        else if(response.fname != 'Getting file info')
-                            fstatus.html('<kbd>'+response.status+'</kbd>');
-                        fname.html(response.fname);
+                        else if(response.fname != 'Getting file info'){
+                          fstatus.html('<kbd>'+response.status+'</kbd>');
+                          fname.html(response.fname);
+                        }
                     }
                 });
             }
@@ -654,6 +689,49 @@
         if(tmp == totalReq)
             clearInterval(refreshPcent);
     }
+    // Stop the download process
+    var index;
+    var fileName;
+    $('.dropdown-menu a span.fstop').on('click', function(){
+      index=$(this).parent().data('index');
+      logFile=$(this).parent().data('logfile');
+      $('#stopModal').modal('show');
+    });
+    $('#stopModal').on('shown.bs.modal', function(){
+      fileName=$('.dropdown-menu a[data-index="'+index+'"]').find('span.fname').text();
+      if(fileName != 'Getting file info' && fileName != 'Failed to download')
+        $('#stopModal div.modal-body').append('<div class="alert alert-info">'+fileName+'</div>');
+      else fileName='NA';
+    });
+    $('#stopBtn').on('click', function(){
+      $('#stopModal div.modal-body').html('<div class="spinner-border text-success"></div>');
+      $('#stopBtn').fadeOut('slow');
+      $.ajax({
+        url: 'getInfo.php',
+        type: 'POST',
+        data: {processId: logFile, file: fileName},
+        dataType: 'json',
+        success: function(response){
+          if(response.msg == 'done'){
+            $('#stopModal div.modal-body').html('<span class="font-weight-bold text-monospace text-info">Process Terminated</span>');
+            $('.dropdown-menu a[data-index="'+index+'"]').remove();
+            if(response.count == 0)
+              $('.dropdown-menu').append('<span class="dropdown-item default-item font-weight-bold text-monospace">No Log available</span>');
+          }
+          else
+            $('#stopModal div.modal-body').html('<span class="font-weight-bold text-monospace text-warning">Some error occurred</span>');
+        },
+        error: function(xhr, status, error)
+        {
+          var errorMessage = xhr.status + ': ' + xhr.statusText;
+          window.alert('Error - ' + errorMessage);
+        }
+      });
+    });
+    $('#stopModal').on('hidden.bs.modal', function(){
+      $('#stopModal div.modal-body').html('<span class="text-danger text-monospace font-weight-bold">Do you want to stop the download?</span>');
+      $('#stopBtn').show();
+    })
   });
  </script>
 

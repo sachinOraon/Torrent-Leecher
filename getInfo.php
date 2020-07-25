@@ -6,7 +6,7 @@
     $count = shell_exec('ps -u www-data | grep -c "python3"');
     if($count > 0)
         echo '<pre>'.$info.'</pre>';
-    else echo '<p class="text-success font-weight-bold">No active process found</p>';
+    else echo '<span class="text-success text-monospace font-weight-bold">No active process found</span>';
  }
  if($_REQUEST['getStorage'] == true){
     $str=shell_exec('df -H --sync --output=size,used,avail,pcent --type=ext4');
@@ -19,7 +19,7 @@
             $info .= $arr[$i].' &nbsp;: '.$arr[$j].'<br>';
         else $info .= $arr[$i].' : '.$arr[$j].'<br>';
     }
-    echo '<p class="text-monospace font-weight-bold">'.$info.'</p>';
+    echo '<span class="text-monospace font-weight-bold">'.$info.'</span>';
  }
  if(isset($_POST['getLog'])){
     $out=shell_exec('cat '.$_REQUEST['getLog']);
@@ -93,5 +93,15 @@
   foreach($delMe as $file)
     shell_exec('rm -rf "files/'.$file.'"');
   echo 'done';
+ }
+ if(isset($_POST['processId'])){
+  shell_exec('pkill --signal TERM -f '.$_REQUEST['processId']);
+  if($_REQUEST['file'] != 'NA')
+    shell_exec('rm -rf "files/'.$_REQUEST['file'].'"');
+  $index=array_search($_REQUEST['processId'], $_SESSION['req_lst']);
+  unset($_SESSION['req_lst'][$index]);
+  $response->msg='done';
+  $response->count=count($_SESSION['req_lst']);
+  echo json_encode($response);
  }
 ?>
