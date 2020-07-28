@@ -678,6 +678,7 @@
                 var curPcent=$(this).find('.fstatus').text();
                 if(curPcent.search('100%') < 0)
                     $(this).find('.fstatus').load('getInfo.php', {'getDlPcent': logfile});
+                else $(this).find('span.fstop').html('');
             }
         });
         var totalReq=$('.dropdown-menu > a').length;
