@@ -255,6 +255,33 @@
   </div>
 </div>
 
+<!-- The Modal -->
+<div class="modal fade" id="pkillmodal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Process Kill</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <div id="pkillform">
+            <div class="form-group">
+                <label for="pwd">Password:</label>
+                <input type="password" class="form-control" id="pkillpass" placeholder="Enter password">
+            </div>
+            <button type="button" class="btn btn-primary" id="pkillpassBtn">Submit&nbsp;<span class="spinner-grow spinner-grow-sm d-none"></span></button>
+        </div>
+        <div id="pkillbody" class='d-none'></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
   <!-- Navbar -->
   <nav class="navbar fixed-top navbar-expand-lg navbar-dark scrolling-navbar">
     <div class="container">
@@ -597,10 +624,28 @@
         clearInterval(refreshProcess);
     });
     function fetchProcess(){
-        $('.processinfo').load('getInfo.php', {"getProcess": true} );
+        $.ajax({
+            url: 'getInfo.php',
+            type: 'POST',
+            data: {getProcess: true},
+            success: function(response){
+                $('.processinfo').html(response);
+                if($('.processinfo').text().search('No active') < 0){
+                    if($('#pkillmodbtn').length == 0){
+                        $('#processLst div.modal-footer').append('<button type="button" class="btn btn-success btn-sm" id="pkillmodbtn" data-toggle="modal" data-target="#pkillmodal" data-backdrop="static">KILL</button>');
+                    }
+                }
+                else{
+                    if($('#pkillmodbtn').length)
+                        $('#pkillmodbtn').remove();
+                }
+            }
+        });
     }
     $('#processLst').on('hidden.bs.modal', function(){
         $('.processinfo').html('<div class="spinner-grow text-info"></div>');
+        if($('#pkillmodbtn').length)
+            $('#pkillmodbtn').remove();
     });
     // Display log modal
     var logFile;
@@ -732,7 +777,81 @@
     $('#stopModal').on('hidden.bs.modal', function(){
       $('#stopModal div.modal-body').html('<span class="text-danger text-monospace font-weight-bold">Do you want to stop the download?</span>');
       $('#stopBtn').show();
-    })
+    });
+    //Process kill function
+    $('#pkillpassBtn').on('click', function(){
+        $('#pkillpassBtn span').removeClass('d-none');
+        $(this).prop('disabled', true);
+        $.ajax({
+            url: 'getInfo.php',
+            type: 'POST',
+            data: {pkillpass: $('#pkillpass').val()},
+            dataType: 'json',
+            success: function(response)
+            {
+                if(response.msg == 'wrongPass')
+                {
+                    $('#pkillpass').val('');
+                    $('#pkillpass').tooltip({
+                        trigger: "click",
+                        html: true,
+                        title: '<span class="font-weight-bold">Incorrect password</span>',
+                        placement: "top"
+                    });
+                    $('#pkillpass').tooltip('show');
+                    setTimeout(() => { $('#pkillpass').tooltip('dispose'); }, 2000);
+                    $('#pkillpassBtn').prop('disabled', false);
+                    $('#pkillpassBtn span').addClass('d-none');
+                }
+                else
+                {
+                    $('#pkillmodal div.modal-content').append('<div class="modal-footer"><button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button></div>');
+                    $('#pkillform').addClass('d-none');
+                    for(pid in response){
+                        $('#pkillbody').append('<div class="pkillList">Process ID : <span class="pid text-monospace font-weight-bold">'+pid+'</span>&nbsp;&nbsp;<span class="pkillicon" style="cursor:pointer">&#10060;</span><pre class="pinfo alert alert-info" style="overflow: hidden; text-overflow: ellipsis;">'+response[pid]+'</pre></div>');
+                        $('span.pkillicon:last').on('click', function(){
+                            var pid=$(this).prev().text();
+                            var entry=$(this);
+                            entry.html('<div class="spinner-border spinner-border-sm text-danger"></div>');
+                            $.ajax({
+                                url: 'getInfo.php',
+                                type: 'POST',
+                                data: {killpid: pid},
+                                success: function(response){
+                                    if(response == 'done'){
+                                        entry.parent().fadeOut('slow', function(){
+                                            entry.parent().remove();
+                                            if($('#pkillbody .pkillList').length == 0)
+                                                $('#pkillbody').append('<span class="succmsg text-monospace text-success font-weight-bold">All process terminated</span>');
+                                        });
+                                    }
+                                    else entry.html('&#10060;');
+                                }
+                            });
+                        });
+                    }
+                    $('#pkillbody').removeClass('d-none');
+                }
+            },
+            error: function(xhr, status, error)
+            {
+                var errorMessage = xhr.status + ': ' + xhr.statusText;
+                window.alert('Error - ' + errorMessage);
+                $('#pkillpassBtn').prop('disabled', false);
+                $('#pkillpassBtn span').addClass('d-none');
+            }
+        });
+    });
+    $('#pkillmodal').on('show.bs.modal', function(){$('#processLst').modal('hide')});
+    $('#pkillmodal').on('hidden.bs.modal', function(){
+        $('#pkillform').removeClass('d-none');
+        $('#pkillbody').addClass('d-none');
+        $('#pkillpassBtn span').addClass('d-none');
+        $('#pkillpassBtn').prop('disabled', false);
+        $('#pkillbody .pkillList').each(function(){$(this).remove()});
+        $('#pkillbody span.succmsg').remove();
+        $('#pkillmodal div.modal-footer').remove();
+    });
   });
  </script>
 
