@@ -103,4 +103,22 @@
   $response->count=count($_SESSION['req_lst']);
   echo json_encode($response);
  }
+ if(isset($_POST['pkillpass'])){
+  if($_REQUEST['pkillpass'] == $pass){
+    $pid=explode('#', shell_exec('pgrep -u www-data -d "#" "goLeecher" | tr -d "\n"'));
+    $pname=explode('^', rtrim(shell_exec('pgrep -u www-data -a "goLeecher" | cut -d" " -f2- | tr -t "\n" "^"'), '^'));
+    echo json_encode(array_combine($pid, $pname));
+  }
+  else
+  {
+    $err->msg='wrongPass';
+    echo json_encode($err);
+  }
+ }
+ if(isset($_POST['killpid'])){
+  exec('kill -9 '.$_REQUEST['killpid'], $output, $return);
+  if($return)
+    echo 'fail';
+  else echo 'done';
+ }
 ?>
