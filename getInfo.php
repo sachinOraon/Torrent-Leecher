@@ -2,8 +2,8 @@
  session_start();
  $pass='qwerty';
  if($_REQUEST['getProcess'] == true){
-    $info = shell_exec('ps -u www-data > files/_log/.psraw && ps -o pid,etime,%mem,%cpu,cmd | head -n1 > files/_log/.psinfo && for line in $(grep -n python3 files/_log/.psraw | cut -d":" -f1); do ps -o pid,etime,%mem,%cpu,cmd -u www-data | head -n${line} | tail -n1 >> files/_log/.psinfo; done && cat files/_log/.psinfo');
-    $count = shell_exec('ps -u www-data | grep -c "python3"');
+    $info = shell_exec('ps -u www-data > files/_log/.psraw && ps -o pid,etime,%mem,%cpu,cmd | head -n1 > files/_log/.psinfo && for line in $(grep -n goLeecher files/_log/.psraw | cut -d":" -f1); do ps -o pid,etime,%mem,%cpu,cmd -u www-data | head -n${line} | tail -n1 >> files/_log/.psinfo; done && cat files/_log/.psinfo');
+    $count = shell_exec('ps -u www-data | grep -c "goLeecher"');
     if($count > 0)
         echo '<pre>'.$info.'</pre>';
     else echo '<span class="text-success text-monospace font-weight-bold">No active process found</span>';
@@ -26,11 +26,10 @@
     echo '<pre style="overflow: hidden; text-overflow: ellipsis;">'.$out.'</pre>';
  }
  if(isset($_POST['getFileName'])){
-    $found=shell_exec('grep -c "Name : " '.$_REQUEST['getFileName']);
+    $found=shell_exec('grep -c "Name   : " '.$_REQUEST['getFileName']);
     $failed=shell_exec('grep -c "Process Terminated" '.$_REQUEST['getFileName']);
     if($found == 1){
-        $cmd='grep -oP "(?<=Name : ).*" '.$_REQUEST['getFileName'].' | tr -d "\n"';
-        //$cmd='grep "Name : " '.$_REQUEST['getFileName'].' | cut -d":" -f2';
+        $cmd='grep -oP "(?<=Name   : ).*" '.$_REQUEST['getFileName'].' | tr -d "\n"';
         $fname=shell_exec($cmd);
         $linecnt=shell_exec('wc -l '.$_REQUEST['getFileName'].' | cut -d" " -f1 | tr -d "\n"');
         if($linecnt > 8)
@@ -57,7 +56,7 @@
  {
   $url="'".$_POST['torrent_url']."'";
   $logfile='files/_log/'.time().'.txt';
-  $cmd='python3 leecher.py '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
+  $cmd='./goLeecher '.$url.'  "'.$logfile.'"  2>/dev/null >/dev/null &';
   shell_exec($cmd);
   $_SESSION['req_lst'][]=$logfile;
   $response->logfile=$logfile;

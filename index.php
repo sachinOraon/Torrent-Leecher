@@ -521,7 +521,7 @@
                     $('#freeUpForm').modal('hide');
                     var idx=1;
                     for(var i in response){
-                        if(response[i] == '_h5ai' || response[i] == '_log' || response[i] == '.' || response[i] == '..')
+                        if(response[i] == '_h5ai' || response[i] == '_log' || response[i] == '.' || response[i] == '..' || response[i] == '.torrent.bolt.db')
                             continue;
                         else $('.filelist').append('<div class="custom-control custom-checkbox">'+'<input type="checkbox" class="custom-control-input" value="'+response[i]+'" id="file'+idx+'"><label class="custom-control-label" for="file'+idx+'">'+response[i]+'</label></div>');
                         idx++;
@@ -629,7 +629,7 @@
     // Get file name and status info for dropdown list
     $(".dropdown-toggle").dropdown();
     $('.dropdown').on('shown.bs.dropdown', function(){
-        refreshFname = setInterval(getFileName, 2000);
+        refreshFname = setInterval(getFileName, 1000);
         refreshPcent = setInterval(getFileStatus, 1000);
     });
     $('.dropdown').on('hidden.bs.dropdown', function(){
