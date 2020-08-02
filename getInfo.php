@@ -116,10 +116,19 @@
     echo json_encode($err);
   }
  }
- if(isset($_POST['killpid'])){
+ if(isset($_POST['killpid']) && isset($_POST['logFile']))
+ {
   exec('kill -9 '.$_REQUEST['killpid'], $output, $return);
   if($return)
     echo 'fail';
-  else echo 'done';
+  else
+  {
+    $found=shell_exec('grep -c "Name   : " '.$_REQUEST['logFile']);
+    if($found == 1){
+      $file=shell_exec('grep -oP "(?<=Name   : ).*" '.$_REQUEST['logFile'].' | tr -d "\n"');
+      shell_exec('rm -rf "files/'.$file.'"');
+    }
+    echo 'done';
+  }
  }
 ?>
