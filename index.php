@@ -449,7 +449,7 @@
             $('input[name="torrent_url"]').tooltip({
                 trigger: "click",
                 html: true,
-                title: '<h6 class="font-weight-bold">Empty URL given</h6>',
+                title: '<span class="font-weight-bold">Empty URL given</span>',
                 placement: "top"
             });
             $('input[name="torrent_url"]').tooltip('show');
@@ -508,7 +508,7 @@
                     $('#pwd').tooltip({
                         trigger: "click",
                         html: true,
-                        title: '<h6 class="font-weight-bold">Incorrect password</h6>',
+                        title: '<span class="font-weight-bold">Incorrect password</span>',
                         placement: "top"
                     });
                     $('#pwd').tooltip('show');
@@ -537,7 +537,7 @@
                     $('#pwdDf').tooltip({
                         trigger: "click",
                         html: true,
-                        title: '<h6 class="font-weight-bold">Incorrect password</h6>',
+                        title: '<span class="font-weight-bold">Incorrect password</span>',
                         placement: "top"
                     });
                     $('#pwdDf').tooltip('show');
@@ -605,7 +605,7 @@
             $('.delFileBtn').tooltip({
                 trigger: "click",
                 html: true,
-                title: '<h6 class="font-weight-bold">No file selected</h6>',
+                title: '<span class="font-weight-bold">No file selected</span>',
                 placement: "left"
             });
             $('.delFileBtn').tooltip('show');
@@ -632,7 +632,11 @@
                 $('.processinfo').html(response);
                 if($('.processinfo').text().search('No active') < 0){
                     if($('#pkillmodbtn').length == 0){
-                        $('#processLst div.modal-footer').append('<button type="button" class="btn btn-success btn-sm" id="pkillmodbtn" data-toggle="modal" data-target="#pkillmodal" data-backdrop="static">KILL</button>');
+                        $('#processLst div.modal-footer').append('<button type="button" class="btn btn-success btn-sm" id="pkillmodbtn">KILL</button>');
+                        $('#pkillmodbtn').on('click', function(){
+                            $('#processLst').modal('hide');
+                            setTimeout(function(){$('#pkillmodal').modal({backdrop: 'static'})}, 500);
+                        });
                     }
                 }
                 else{
@@ -808,6 +812,8 @@
                     $('#pkillmodal div.modal-content').append('<div class="modal-footer"><button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button></div>');
                     $('#pkillform').addClass('d-none');
                     for(pid in response){
+                        var url=response[pid].slice(11);
+                        var logfile=url.slice(url.lastIndexOf('files/_'), url.length);
                         $('#pkillbody').append('<div class="pkillList">Process ID : <span class="pid text-monospace font-weight-bold">'+pid+'</span>&nbsp;&nbsp;<span class="pkillicon" style="cursor:pointer">&#10060;</span><pre class="pinfo alert alert-info" style="overflow: hidden; text-overflow: ellipsis;">'+response[pid]+'</pre></div>');
                         $('span.pkillicon:last').on('click', function(){
                             var pid=$(this).prev().text();
@@ -816,7 +822,7 @@
                             $.ajax({
                                 url: 'getInfo.php',
                                 type: 'POST',
-                                data: {killpid: pid},
+                                data: {killpid: pid, logFile: logfile},
                                 success: function(response){
                                     if(response == 'done'){
                                         entry.parent().fadeOut('slow', function(){
@@ -842,7 +848,6 @@
             }
         });
     });
-    $('#pkillmodal').on('show.bs.modal', function(){$('#processLst').modal('hide')});
     $('#pkillmodal').on('hidden.bs.modal', function(){
         $('#pkillform').removeClass('d-none');
         $('#pkillbody').addClass('d-none');
