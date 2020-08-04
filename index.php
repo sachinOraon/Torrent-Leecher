@@ -812,9 +812,20 @@
                     $('#pkillmodal div.modal-content').append('<div class="modal-footer"><button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button></div>');
                     $('#pkillform').addClass('d-none');
                     for(pid in response){
-                        var url=response[pid].slice(11);
+                        var url=response[pid].slice(12);
                         var logfile=url.slice(url.lastIndexOf('files/_'), url.length);
-                        $('#pkillbody').append('<div class="pkillList">Process ID : <span class="pid text-monospace font-weight-bold">'+pid+'</span>&nbsp;&nbsp;<span class="pkillicon" style="cursor:pointer">&#10060;</span><pre class="pinfo alert alert-info" style="overflow: hidden; text-overflow: ellipsis;">'+response[pid]+'</pre></div>');
+                        $('#pkillbody').append('<div class="pkillList">Process ID : <span class="pid text-monospace font-weight-bold">'+pid+'</span>&nbsp;&nbsp;<span class="pkillicon" style="cursor:pointer">&#10060;</span><pre class="pinfo alert alert-info" style="overflow: hidden; text-overflow: ellipsis;">'+url+'</pre></div>');
+                        $.ajax({
+                            url: 'getInfo.php',
+                            type: 'POST',
+                            data: {getFileName: logfile},
+                            dataType: 'json',
+                            success: function(response){
+                                if(response.fname != 'Getting file info' && response.fname != 'Failed to download'){
+                                    $('pre.pinfo').text(response.fname);
+                                }
+                            }
+                        });
                         $('span.pkillicon:last').on('click', function(){
                             var pid=$(this).prev().text();
                             var entry=$(this);
