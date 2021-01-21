@@ -429,6 +429,9 @@
       shuffle: false,
       backSpeed: 20
     });
+    // WebSocket connection initialization
+    var socket=new WebSocket('ws://localhost:8080');
+    socket.onopen=function(e){console.log("websocket connection established");};
     // Storage info modal
     $('.storage_info').on('click', function(){
         $('#storageInfo').modal('show');
