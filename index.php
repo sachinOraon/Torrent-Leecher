@@ -430,7 +430,7 @@
       backSpeed: 20
     });
     // WebSocket connection initialization
-    var socket=new WebSocket('ws://localhost:8080');
+    var socket=new WebSocket('ws://'+window.location.host+':8080');
     socket.onopen=function(e){console.log("websocket connection established");};
     // Storage info modal
     $('.storage_info').on('click', function(){
@@ -618,36 +618,30 @@
     // Display processLst modal and fetch running process info
     $('.pbtn').on('click', function(){
         $('#processLst').modal('show');
+        socket.onmessage=function(e){$('.processinfo').html(e.data)};
     });
     $('#processLst').on('shown.bs.modal', function(){
         fetchProcess();
-        refreshProcess = setInterval(fetchProcess, 5000);
+        refreshProcess = setInterval(fetchProcess, 1000);
     });
     $('#processLst').on('hide.bs.modal', function(){
         clearInterval(refreshProcess);
     });
     function fetchProcess(){
-        $.ajax({
-            url: 'getInfo.php',
-            type: 'POST',
-            data: {getProcess: true},
-            success: function(response){
-                $('.processinfo').html(response);
-                if($('.processinfo').text().search('No active') < 0){
-                    if($('#pkillmodbtn').length == 0){
-                        $('#processLst div.modal-footer').append('<button type="button" class="btn btn-success btn-sm" id="pkillmodbtn">KILL</button>');
-                        $('#pkillmodbtn').on('click', function(){
-                            $('#processLst').modal('hide');
-                            setTimeout(function(){$('#pkillmodal').modal({backdrop: 'static'})}, 500);
-                        });
-                    }
-                }
-                else{
-                    if($('#pkillmodbtn').length)
-                        $('#pkillmodbtn').remove();
-                }
-            }
-        });
+        socket.send("getProcess");
+        if($('.processinfo').text().search('No active') < 0 && $('.processinfo').html().search('spinner-grow') < 0){
+          if($('#pkillmodbtn').length == 0){
+            $('#processLst div.modal-footer').append('<button type="button" class="btn btn-success btn-sm" id="pkillmodbtn">KILL</button>');
+            $('#pkillmodbtn').on('click', function(){
+              $('#processLst').modal('hide');
+              setTimeout(function(){$('#pkillmodal').modal({backdrop: 'static'})}, 500);
+            });
+          }
+        }
+        else{
+          if($('#pkillmodbtn').length)
+            $('#pkillmodbtn').remove();
+        }
     }
     $('#processLst').on('hidden.bs.modal', function(){
         $('.processinfo').html('<div class="spinner-grow text-info"></div>');

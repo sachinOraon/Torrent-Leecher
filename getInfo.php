@@ -1,13 +1,6 @@
 <?php
  session_start();
  $pass='qwerty';
- if($_REQUEST['getProcess'] == true){
-    $info = shell_exec('ps -u www-data > files/_log/.psraw && ps -o pid,etime,%mem,%cpu,cmd | head -n1 > files/_log/.psinfo && for line in $(grep -n goLeecher files/_log/.psraw | cut -d":" -f1); do ps -o pid,etime,%mem,%cpu,cmd -u www-data | head -n${line} | tail -n1 >> files/_log/.psinfo; done && cat files/_log/.psinfo');
-    $count = shell_exec('ps -u www-data | grep -c "goLeecher"');
-    if($count > 0)
-        echo '<pre>'.$info.'</pre>';
-    else echo '<span class="text-success text-monospace font-weight-bold">No active process found</span>';
- }
  if($_REQUEST['getStorage'] == true){
     $str=shell_exec('df -H --sync --output=size,used,avail,pcent --type=ext4');
     $str=trim(preg_replace('/\s+/',' ', $str));
