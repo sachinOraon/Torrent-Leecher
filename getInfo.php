@@ -14,10 +14,6 @@
     }
     echo '<span class="text-monospace font-weight-bold">'.$info.'</span>';
  }
- if(isset($_POST['getLog'])){
-    $out=shell_exec('cat '.$_REQUEST['getLog']);
-    echo '<pre style="overflow: hidden; text-overflow: ellipsis;">'.$out.'</pre>';
- }
  if(isset($_POST['getFileName'])){
     $found=shell_exec('grep -c "Name   : " '.$_REQUEST['getFileName']);
     $failed=shell_exec('grep -c "Process Terminated" '.$_REQUEST['getFileName']);

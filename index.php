@@ -431,7 +431,20 @@
     });
     // WebSocket connection initialization
     var socket=new WebSocket('ws://'+window.location.host+':8080');
-    socket.onopen=function(e){console.log("websocket connection established");};
+    socket.onopen=function(event){console.log("websocket connection established");};
+    socket.onmessage=function(event){
+      var msg=JSON.parse(event.data);
+      var action=msg.action;
+      var reply=msg.reply;
+      switch(action){
+        case "getProcess":
+          $('.processinfo').html(reply);
+          break;
+        case "getLog":
+          $('.logfile').html(reply);
+          break;
+      }
+    }
     // Storage info modal
     $('.storage_info').on('click', function(){
         $('#storageInfo').modal('show');
@@ -618,7 +631,6 @@
     // Display processLst modal and fetch running process info
     $('.pbtn').on('click', function(){
         $('#processLst').modal('show');
-        socket.onmessage=function(e){$('.processinfo').html(e.data)};
     });
     $('#processLst').on('shown.bs.modal', function(){
         fetchProcess();
@@ -658,10 +670,10 @@
         fetchLog();
         if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0)
             clearInterval(refreshLog);
-        else refreshLog = setInterval(fetchLog, 1000);
+        else refreshLog = setInterval(fetchLog, 500);
     });
     function fetchLog(){
-        $('.logfile').load('getInfo.php', {'getLog': logFile});
+        socket.send("getLog:"+logFile);
         if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0)
             clearInterval(refreshLog);
     }
