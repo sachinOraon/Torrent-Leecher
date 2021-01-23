@@ -11,4 +11,4 @@ A simple web interface for downloading torrent files. Just provide the `magnet` 
 4. Edit the file `/etc/apache2/mods-enabled/dir.conf`
 5. At the end of line beginning with `DirectoryIndex`, add the line `/torrent/files/_h5ai/public/index.php`
 6. Restart the `apache2` server and go to `localhost/torrent`
-7. Start the websocket server on a new terminal by executing `php /var/www/html/torrent/websocket/server.php` command
+7. Start the websocket server on a new terminal by executing `cd /var/www/html/torrent/websocket && php server.php` command

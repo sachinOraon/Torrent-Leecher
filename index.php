@@ -443,6 +443,20 @@
         case "getLog":
           $('.logfile').html(reply);
           break;
+        case "getFileName":
+            for(idx in reply){
+                var selector='.dropdown-menu > a[data-index='+idx+']';
+                $(selector).find('.fname').html(reply[idx]['fname']);
+                if(reply[idx]['fname'] == 'Failed to download')
+                {
+                    $(selector).find('.fstatus').html(reply[idx]['status']);
+                    $(selector).find('.fstop').html('');
+                }
+                else if(reply[idx]['fname'] != 'Getting file info'){
+                    $(selector).find('.fstatus').html('<kbd>'+reply[idx]['status']+'</kbd>');
+                }
+            }
+          break;
       }
     }
     // Storage info modal
@@ -640,10 +654,10 @@
         clearInterval(refreshProcess);
     });
     function fetchProcess(){
-        socket.send("getProcess");
+        socket.send(JSON.stringify({"action":"getProcess"}));
         if($('.processinfo').text().search('No active') < 0 && $('.processinfo').html().search('spinner-grow') < 0){
           if($('#pkillmodbtn').length == 0){
-            $('#processLst div.modal-footer').append('<button type="button" class="btn btn-success btn-sm" id="pkillmodbtn">KILL</button>');
+            $('#processLst div.modal-footer').prepend('<button type="button" class="btn btn-success btn-sm" id="pkillmodbtn">KILL</button>');
             $('#pkillmodbtn').on('click', function(){
               $('#processLst').modal('hide');
               setTimeout(function(){$('#pkillmodal').modal({backdrop: 'static'})}, 500);
@@ -673,7 +687,7 @@
         else refreshLog = setInterval(fetchLog, 500);
     });
     function fetchLog(){
-        socket.send("getLog:"+logFile);
+        socket.send(JSON.stringify({"action":"getLog "+logFile}));
         if($('.logfile').html().search('Completed') > 0 || $('.logfile').html().search('Process Terminated') > 0)
             clearInterval(refreshLog);
     }
@@ -687,7 +701,7 @@
     // Get file name and status info for dropdown list
     $(".dropdown-toggle").dropdown();
     $('.dropdown').on('shown.bs.dropdown', function(){
-        refreshFname = setInterval(getFileName, 1000);
+        refreshFname = setInterval(getFileName, 500);
         refreshPcent = setInterval(getFileStatus, 1000);
     });
     $('.dropdown').on('hidden.bs.dropdown', function(){
@@ -695,39 +709,24 @@
         clearInterval(refreshPcent);
     });
     function getFileName(){
-        $('.dropdown-menu > a').each(function(){
-            var logfile=$(this).data('logfile');
-            var fname=$(this).find('.fname');
-            var fstatus=$(this).find('.fstatus');
-            var fstop=$(this).find('.fstop');
-            if(fname.html().search('Getting file') >= 0){
-                $.ajax({
-                    url: 'getInfo.php',
-                    type: 'POST',
-                    data: {getFileName: logfile},
-                    dataType: 'json',
-                    success: function(response){
-                        if(response.fname == 'Failed to download'){
-                          fstatus.html(response.status);
-                          fname.html(response.fname);
-                          fstop.html('');
-                        }
-                        else if(response.fname != 'Getting file info'){
-                          fstatus.html('<kbd>'+response.status+'</kbd>');
-                          fname.html(response.fname);
-                        }
-                    }
-                });
-            }
-        });
-        var totalReq=$('.dropdown-menu > a').length;
+        var payload={"action":"getFileName"};
         var tmp=0;
+        var totalReq=$('.dropdown-menu > a').length;
         $('.dropdown-menu > a').each(function(){
-            if($(this).find('.fname').text().search('Getting file') < 0)
-                tmp++;
+          var idx=$(this).data("index");
+          var logfile=$(this).data("logfile");
+          var fname=$(this).find('.fname');
+          if(fname.html().search('Getting file') >= 0)
+            payload[idx]=logfile;
+          else tmp++;
         });
         if(tmp == totalReq)
-            clearInterval(refreshFname);
+          clearInterval(refreshFname);
+        else
+        {
+          var jsonData=JSON.stringify(payload);
+          socket.send(jsonData);
+        }
     }
     function getFileStatus(){
         $('.dropdown-menu > a').each(function(){
@@ -759,7 +758,7 @@
     $('#stopModal').on('shown.bs.modal', function(){
       fileName=$('.dropdown-menu a[data-index="'+index+'"]').find('span.fname').text();
       if(fileName != 'Getting file info' && fileName != 'Failed to download')
-        $('#stopModal div.modal-body').append('<div class="alert alert-info">'+fileName+'</div>');
+        $('#stopModal div.modal-body').append('<div class="alert alert-info text-break">'+fileName+'</div>');
       else fileName='NA';
     });
     $('#stopBtn').on('click', function(){
