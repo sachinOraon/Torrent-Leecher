@@ -37,10 +37,6 @@
     }
     echo json_encode($response);
  }
- if(isset($_POST['getDlPcent'])){
-  $pcent=shell_exec('head -n9 '.$_REQUEST['getDlPcent'].' | tail -n1 | tr -d "\n[*] "');
-  echo '<kbd>'.$pcent.'</kbd>';
- }
  if(isset($_POST['torrent_url']))
  {
   $url="'".$_POST['torrent_url']."'";

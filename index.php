@@ -438,11 +438,11 @@
       var reply=msg.reply;
       switch(action){
         case "getProcess":
-          $('.processinfo').html(reply);
-          break;
+            $('.processinfo').html(reply);
+            break;
         case "getLog":
-          $('.logfile').html(reply);
-          break;
+            $('.logfile').html(reply);
+            break;
         case "getFileName":
             for(idx in reply){
                 var selector='.dropdown-menu > a[data-index='+idx+']';
@@ -456,7 +456,18 @@
                     $(selector).find('.fstatus').html('<kbd>'+reply[idx]['status']+'</kbd>');
                 }
             }
-          break;
+            break;
+        case "getFileStatus":
+            for(idx in reply){
+                var selector='.dropdown-menu > a[data-index='+idx+']';
+                $(selector).find('span.fstatus').html(reply[idx]['status']);
+                if(reply[idx]['status'] == "100%")
+                {
+                    clearInterval(refreshPcent);
+                    $(selector).find('span.fstop').html('');
+                }
+            }
+            break;
       }
     }
     // Storage info modal
@@ -702,7 +713,7 @@
     $(".dropdown-toggle").dropdown();
     $('.dropdown').on('shown.bs.dropdown', function(){
         refreshFname = setInterval(getFileName, 500);
-        refreshPcent = setInterval(getFileStatus, 1000);
+        refreshPcent = setInterval(getFileStatus, 500);
     });
     $('.dropdown').on('hidden.bs.dropdown', function(){
         clearInterval(refreshFname);
@@ -729,23 +740,25 @@
         }
     }
     function getFileStatus(){
+        var payload={"action":"getFileStatus"};
+        var tmp=0;
         $('.dropdown-menu > a').each(function(){
             var logfile=$(this).data('logfile');
+            var idx=$(this).data("index");
             if($(this).find('.fname').html().search('Getting file') < 0 && $(this).find('.fname').html().search('Failed to') < 0){
                 var curPcent=$(this).find('.fstatus').text();
                 if(curPcent.search('100%') < 0)
-                    $(this).find('.fstatus').load('getInfo.php', {'getDlPcent': logfile});
+                {
+                    payload[idx]=logfile;
+                    tmp++;
+                }
                 else $(this).find('span.fstop').html('');
             }
         });
-        var totalReq=$('.dropdown-menu > a').length;
-        var tmp=0;
-        $('.dropdown-menu > a').each(function(){
-            if($(this).find('.fstatus').text().search('100%') >= 0)
-                tmp++;
-        });
-        if(tmp == totalReq)
-            clearInterval(refreshPcent);
+        if(tmp){
+            var jsonData=JSON.stringify(payload);
+            socket.send(jsonData);
+        }
     }
     // Stop the download process
     var index;

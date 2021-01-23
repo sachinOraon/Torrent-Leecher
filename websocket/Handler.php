@@ -44,7 +44,7 @@ class Handler implements MessageComponentInterface {
                     $cmd='grep -oP "(?<=Name   : ).*" '.'../'.$logfile.' | tr -d "\n"';
                     $fname=shell_exec($cmd);
                     $linecnt=shell_exec('wc -l '.'../'.$logfile.' | cut -d" " -f1 | tr -d "\n"');
-                    if($linecnt > 8)
+                    if($linecnt >= 8)
                         $status=shell_exec('head -n9 '.'../'.$logfile.' | tail -n1 | tr -d "\n[*] "');
                     else $status='0%';
                 }
@@ -58,6 +58,18 @@ class Handler implements MessageComponentInterface {
                 }
                 $response["reply"][$idx]["fname"]=$fname;
                 $response["reply"][$idx]["status"]=$status;
+            }
+        }
+        //fetch the download % of files
+        if(!strncmp($input->action, "getFileStatus", 12)){
+            $response["action"]=$input->action;
+            foreach($input as $idx => $logfile){
+                if(!strcmp($idx, "action")) continue;
+                $linecnt=shell_exec('wc -l '.'../'.$logfile.' | cut -d" " -f1 | tr -d "\n"');
+                if($linecnt >= 8)
+                    $pcent=shell_exec('head -n9 '.'../'.$logfile.' | tail -n1 | tr -d "\n[*] "');
+                else $pcent="0%";
+                $response["reply"][$idx]["status"]='<kbd>'.$pcent.'</kbd>';
             }
         }
         //send the response to the client
