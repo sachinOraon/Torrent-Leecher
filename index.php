@@ -41,6 +41,24 @@
     $_SESSION['req_lst']=array();
 ?>
 <!-- The Modal -->
+<div class="modal fade" id="wsAlertModal">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title text-danger font-weight-bold">Error</h4>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body font-weight-bold text-monospace">
+        Failed to establish websocket connection to the server. Kindly try again later.
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- The Modal -->
 <div class="modal fade" id="myModal">
   <div class="modal-dialog modal-sm">
     <div class="modal-content">
@@ -58,6 +76,7 @@
 
       <!-- Modal footer -->
       <div class="modal-footer">
+        <button type="button" class="btn btn-primary btn-sm statBtn">Status</button>
         <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
       </div>
 
@@ -389,7 +408,7 @@
 
     <!--Call to action-->
     <div class="pt-1">
-    	<small class="text-monospace">Disclaimer : We believe in a right to privacy, not piracy. While this site is targeted towards torrents, we do not endorse or condone any inappropriate use of torrents and copyright protected materials. This site was created for educational purpose only demonstrating the use of libtorrent python library. Kindly follow the rules and guidelines of downloading or spreading torrents as per your government regulations.</small>
+    	<small class="text-monospace">Disclaimer : We believe in a right to privacy, not piracy. While this site is targeted towards torrents, we do not endorse or condone any inappropriate use of torrents and copyright protected materials. This site was created for educational purpose only demonstrating the use of <a href="https://github.com/anacrolix/torrent" target="_blank">anacrolix&apos;s torrent</a> library. Kindly follow the rules and guidelines of downloading or spreading torrents as per your government regulations.</small>
     </div>
     <!--/.Call to action-->
 
@@ -431,6 +450,10 @@
     });
     // WebSocket connection initialization
     var socket=new WebSocket('ws://'+window.location.host+':8080');
+    setTimeout(function(){
+        if(socket.readyState != socket.OPEN)
+            $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
+    }, 2000);
     socket.onopen=function(event){console.log("websocket connection established");};
     socket.onmessage=function(event){
       var msg=JSON.parse(event.data);
@@ -526,6 +549,11 @@
             }
           });
         }
+    });
+    //Status button click function
+    $('button.statBtn').on('click', function(){
+        $('#myModal').modal('hide');
+        setTimeout(function(){$('.dropdown-menu a:last .fname').click();}, 500);
     });
     // Purge files function
     $('#purgeForm button').on('click', function(){
