@@ -455,6 +455,7 @@
             $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
     }, 2000);
     socket.onopen=function(event){console.log("websocket connection established");};
+    socket.onclose=function(event){$('#wsAlertModal').modal({backdrop:"static", keyboard:false});};
     socket.onmessage=function(event){
       var msg=JSON.parse(event.data);
       var action=msg.action;

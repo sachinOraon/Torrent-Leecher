@@ -24,7 +24,7 @@ class Handler implements MessageComponentInterface {
             $count = shell_exec('ps -u www-data | grep -c "goLeecher"');
             $response["action"]="getProcess";
             if($count > 0)
-                $response["reply"] = '<pre>'.$info.'</pre>';
+                $response["reply"] = '<pre style="overflow: hidden; text-overflow: ellipsis;">'.$info.'</pre>';
             else $response["reply"] = '<span class="text-success text-monospace font-weight-bold">No active process found</span>';
         }
         //fetch the log of currently downloading file
