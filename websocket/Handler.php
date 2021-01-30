@@ -32,6 +32,11 @@ class Handler implements MessageComponentInterface {
             $logfile=substr($input->action, 7);
             $response["action"]="getLog";
             $response["reply"]='<pre style="overflow: hidden; text-overflow: ellipsis;">'.shell_exec('cat ../'.$logfile).'</pre>';
+            $linecnt=shell_exec('wc -l '.'../'.$logfile.' | cut -d" " -f1 | tr -d "\n"');
+            if($linecnt >= 8)
+                $pcent=shell_exec('head -n9 '.'../'.$logfile.' | tail -n1 | tr -d "\n[*] "');
+            else $pcent="0%";
+            $response["pcent"]=$pcent;
         }
         //fetch the file name
         if(!strncmp($input->action, "getFileName", 11)){

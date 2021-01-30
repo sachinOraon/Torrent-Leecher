@@ -143,7 +143,14 @@
 
       <!-- Modal footer -->
       <div class="modal-footer">
-        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+        <div class="col-md-10">
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+        </div>
       </div>
 
     </div>
@@ -466,6 +473,7 @@
             break;
         case "getLog":
             $('.logfile').html(reply);
+            $('#logModal .modal-footer .progress-bar').attr({"aria-valuenow":msg.pcent.replace("%",""), "style":"width:"+msg.pcent});
             break;
         case "getFileName":
             for(idx in reply){
@@ -737,6 +745,7 @@
     });
     $('#logModal').on('hidden.bs.modal', function(){
         $('.logfile').html('<div class="spinner-grow text-success"></div>');
+        $('#logModal .modal-footer .progress-bar').attr({"aria-valuenow":"0", "style":"width:0%"});
     });
     // Get file name and status info for dropdown list
     $(".dropdown-toggle").dropdown();
