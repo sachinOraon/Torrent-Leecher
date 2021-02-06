@@ -134,7 +134,7 @@
 
       <!-- Modal Header -->
       <div class="modal-header">
-        <h4 class="modal-title">View Log</h4>
+        <h4 class="modal-title">Download Info</h4>
         <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
@@ -143,13 +143,10 @@
 
       <!-- Modal footer -->
       <div class="modal-footer">
-        <div class="col-md-10">
+        <div class="col-md-12">
             <div class="progress">
                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
         </div>
       </div>
 
