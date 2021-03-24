@@ -3,17 +3,19 @@ namespace MyApp;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 
+date_default_timezone_set("Asia/Kolkata");
+
 class Handler implements MessageComponentInterface {
     protected $clients;
 
     public function __construct(){
         $this->clients = new \SplObjectStorage;
-        echo "[*] Websocket Server started [localhost:8080]\n";
+        echo "[".date("d-m-Y H:i:s")."]"." Websocket Server started [localhost:8080]\n";
     }
     public function onOpen(ConnectionInterface $conn) {
         // Store the new connection to send messages to later
         $this->clients->attach($conn);
-        echo "[*] [ResourceID:{$conn->resourceId}] New connection\n";
+        echo "[".date("d-m-Y H:i:s")."]"." New connection [ResourceID:{$conn->resourceId}]\n";
     }
 
     public function onMessage(ConnectionInterface $from, $msg) {
@@ -24,7 +26,7 @@ class Handler implements MessageComponentInterface {
             $count = shell_exec('ps -u www-data | grep -c "goLeecher"');
             $response["action"]="getProcess";
             if($count > 0)
-                $response["reply"] = '<pre style="overflow: hidden; text-overflow: ellipsis;">'.$info.'</pre>';
+                $response["reply"] = '<pre style="overflow: hidden; text-overflow: ellipsis; cursor: default;">'.$info.'</pre>';
             else $response["reply"] = '<span class="text-success text-monospace font-weight-bold">No active process found</span>';
         }
         //fetch the log of currently downloading file
@@ -55,11 +57,11 @@ class Handler implements MessageComponentInterface {
                 }
                 else if($failed == 1){
                   $fname='Failed to download';
-                  $status='&#128683;';
+                  $status='NA';
                 }
                 else{
                   $fname='Getting file info';
-                  $status='<div class="spinner-border text-success spinner-border-sm"></div>';
+                  $status='<div class="spinner-grow text-success spinner-grow-sm"></div>';
                 }
                 $response["reply"][$idx]["fname"]=$fname;
                 $response["reply"][$idx]["status"]=$status;
@@ -74,7 +76,7 @@ class Handler implements MessageComponentInterface {
                 if($linecnt >= 8)
                     $pcent=shell_exec('head -n9 '.'../'.$logfile.' | tail -n1 | tr -d "\n[*] "');
                 else $pcent="0%";
-                $response["reply"][$idx]["status"]='<kbd>'.$pcent.'</kbd>';
+                $response["reply"][$idx]["status"]=$pcent;
             }
         }
         //send the response to the client
@@ -84,11 +86,11 @@ class Handler implements MessageComponentInterface {
     public function onClose(ConnectionInterface $conn) {
         // The connection is closed, remove it, as we can no longer send it messages
         $this->clients->detach($conn);
-        echo "[*] [ResourceID:{$conn->resourceId}] Connection has disconnected\n";
+        echo "[".date("d-m-Y H:i:s")."]"." Connection closed [ResourceID:{$conn->resourceId}]\n";
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e) {
-        echo "[*] An error has occurred: {$e->getMessage()}\n";
+        echo "[".date("d-m-Y H:i:s")."]"." An error has occurred: {$e->getMessage()}\n";
         $conn->close();
     }
 }

@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>Torrent Leecher</title>
+  <title>Torrent Downloader</title>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css">
   <!-- Bootstrap core CSS -->
@@ -127,6 +127,41 @@
     </div>
   </div>
 </div>
+
+<!-- The Modal -->
+<div class="modal fade" id="dlModal">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Download List</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <?php
+          if(count($_SESSION['req_lst'])){
+            $i=1;
+            foreach($_SESSION['req_lst'] as $file){
+              echo '<div class="alert alert-warning" role="alert"><a class="alert-link font-weight-bold text-monospace viewLogModal fname" href="#" data-logfile="'.$file.'" data-index="'.$i.'">Getting file info</a>&nbsp;&nbsp;<span class="fstatus" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success" role="status"></div></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>';
+              $i++;
+            }
+          }
+          else echo '<div class="alert alert-info font-weight-bold text-monospace no-url-sub">No url submitted</div>';
+        ?>
+      </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- The Modal -->
 <div class="modal fade" id="logModal">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -330,20 +365,8 @@
           <li class="nav-item">
             <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a>
           </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-list-ul"></i> Status</a>
-            <div class="dropdown-menu">
-                <?php
-                if(count($_SESSION['req_lst'])){
-                  $i=1;
-                    foreach($_SESSION['req_lst'] as $file){
-                        echo '<a class="dropdown-item" href="#" data-logfile="'.$file.'" data-index="'.$i.'">'.'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;&nbsp;<span class="fstop">&#10060;</span>&nbsp;&nbsp;<span class="fname text-monospace viewLogModal">Getting file info</span></a>';
-                        $i++;
-                    }
-                }
-                else echo '<span class="dropdown-item default-item font-weight-bold text-monospace">No url submitted</span>';
-                ?>
-            </div>
+          <li class="nav-item">
+            <a class="nav-link dlistbtn" href="#"><i class="fas fa-list-ul"></i> Tasks</a>
           </li>
           <li class="nav-item">
             <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
@@ -358,7 +381,7 @@
             <a class="nav-link" href="#" data-toggle="modal" data-target="#freeUpForm" data-backdrop="static"><i class="fas fa-trash-alt"></i> Delete Files</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="https://unblockit.id/" target="_blank"><i class="far fa-grin-stars"></i> Torrent Sites</a>
+            <a class="nav-link" href="https://unblockit.buzz/" target="_blank"><i class="far fa-grin-stars"></i> Torrent Sites</a>
           </li>
         </ul>
 
@@ -369,35 +392,27 @@
   <!-- Navbar -->
 
   <!-- Full Page Intro -->
-  <div id="particles-js" class="view" style="background-image: url('https://www.hdwallpapers.in/download/experiment_3-1280x720.jpg'); background-repeat: no-repeat; background-size: cover;">
+  <div id="particles-js" class="view" style="background-image: url('https://www.hdwallpapers.in/download/abstract_dark_colorful_digital_art_4k_hd_abstract-1280x720.jpg'); background-repeat: no-repeat; background-size: cover;">
 
     <!-- Mask & flexbox options-->
     <div class="mask rgba-black-light d-flex justify-content-center align-items-center">
 
       <!-- Content -->
-      <div class="text-center white-text wow fadeIn col-md-5">
-        <div class="row">
-            <div class="col-md-6"><h1 class="mb-4 display-2" style="font-family: 'tale_of_hawksregular'; text-shadow: 0 0 10px #007cff, 0 0 12px #00c3ff, 0 0 14px #6800ff, 0 0 16px #f00, 0 0 18px #f00;">Torrent</h1></div>
-            <div class="col-md-6"><h1 class="mb-4 display-2" style="font-family: 'tale_of_hawksregular'; text-shadow: 0 0 10px #007cff, 0 0 12px #00c3ff, 0 0 14px #6800ff, 0 0 16px #f00, 0 0 18px #f00;">Leecher</h1></div>
-        </div>
-            <div id="typed-strings-body">
-	            <p>You can paste .torrent file url or magnet link.</p>
-	            <p>Just sit and relax, I will download it for you.</p>
-	            <p>It's better than any other leeching service.</p>
-	            <p>NO limitation in file size.</p>
-            </div>
-            <h6 class="font-weight-bold" style="text-shadow: 0 0 10px #f44336, 0 0 12px #00c3ff, 0 0 14px #6800ff, 0 0 16px #f00, 0 0 18px #f00;"><span id="typed-body"></span></h6><br><br>
-			<form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>' id='submitUrl'>
-			  <div class="form-group">
-				<div class="input-group mx-auto">
-				  <div class="input-group-prepend">
-				    <span class="input-group-text" id="inputGroup-sizing-default"><i class="fas fa-magnet"></i></span>
-				  </div>
-				  <input type="text" class="form-control" name='torrent_url' aria-label="torrent url" aria-describedby="inputGroup-sizing-default" placeholder="Paste .torrent file url or magnet link" required>
-				</div>
-			   </div>
-			  <button type="button" class="btn btn-outline-white btn-lg submitBtn">Download <i class="fas fa-arrow-circle-down fa-lg"></i></button>
-			</form>
+      <div class="text-center white-text mx-5 wow fadeIn">
+        <h1 class="mb-4 display-3" style="font-family: 'tale_of_hawksregular'; text-shadow: 0 0 10px #007cff, 0 0 12px #00c3ff, 0 0 14px #6800ff, 0 0 16px #f00, 0 0 18px #f00;"><strong>Torrent &nbsp;Downloader</strong></h1><hr>
+
+            <form method='POST' action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>' id='submitUrl'>
+              <div class="form-group">
+                <div class="input-group mx-auto">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroup-sizing-default"><i class="fas fa-magnet"></i></span>
+                  </div>
+                  <input type="text" class="form-control" name='torrent_url' aria-label="torrent url" aria-describedby="inputGroup-sizing-default" placeholder="Paste .torrent file url or magnet link" required>
+                </div>
+               </div>
+              <button type="button" class="btn btn-outline-white btn-lg submitBtn">Download <i class="fas fa-arrow-circle-down fa-lg"></i></button>
+            </form>
+
       </div>
       <!--/.Content -->
 
@@ -412,13 +427,13 @@
 
     <!--Call to action-->
     <div class="pt-1">
-    	<small class="text-monospace">Disclaimer : We believe in a right to privacy, not piracy. While this site is targeted towards torrents, we do not endorse or condone any inappropriate use of torrents and copyright protected materials. This site was created for educational purpose only demonstrating the use of <a href="https://github.com/anacrolix/torrent" target="_blank">anacrolix&apos;s torrent</a> library. Kindly follow the rules and guidelines of downloading or spreading torrents as per your government regulations.</small>
+        <small class="text-monospace">Disclaimer : We believe in a right to privacy, not piracy. While this site is targeted towards torrents, we do not endorse or condone any inappropriate use of torrents and copyright protected materials. This site was created for educational purpose only demonstrating the use of <a href="https://github.com/anacrolix/torrent" target="_blank">anacrolix&apos;s torrent</a> library. Kindly follow the rules and guidelines of downloading or spreading torrents as per your government regulations.</small>
     </div>
     <!--/.Call to action-->
 
     <!--Copyright-->
     <div class="footer-copyright py-3">
-      © 2020 Copyright:
+      © 2021 Copyright:
       <a href="https://www.github.com/sachinOraon" target="_blank"> @sachinOraon</a>
     </div>
     <!--/.Copyright-->
@@ -435,23 +450,12 @@
   <script type="text/javascript" src="js/bootstrap.min.js"></script>
   <!-- MDB core JavaScript -->
   <script type="text/javascript" src="js/mdb.min.js"></script>
-  <!-- Typed.js plugin -->
-  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11"></script>
-  <!-- Particles.js plugin -->
+  <!-- Particles.js plugin
   <script type="text/javascript" src="js/particles.js"></script>
-  <script type="text/javascript" src="js/app.js"></script>
+  <script type="text/javascript" src="js/app.js"></script> -->
   <!-- Initializations -->
   <script type="text/javascript">
   $(document).ready(function(){
-    // Typed.js
-    var typed = new Typed('#typed-body', {
-      stringsElement: '#typed-strings-body',
-      typeSpeed: 40,
-      loop: true,
-      loopCount: Infinity,
-      shuffle: false,
-      backSpeed: 20
-    });
     // WebSocket connection initialization
     var socket=new WebSocket('ws://'+window.location.host+':8080');
     setTimeout(function(){
@@ -474,28 +478,40 @@
             break;
         case "getFileName":
             for(idx in reply){
-                var selector='.dropdown-menu > a[data-index='+idx+']';
-                $(selector).find('.fname').html(reply[idx]['fname']);
+                var selector='#dlModal .modal-body div.alert > a[data-index='+idx+']';
                 if(reply[idx]['fname'] == 'Failed to download')
                 {
-                    $(selector).find('.fstatus').html(reply[idx]['status']);
-                    $(selector).find('.fstop').html('');
+                    $(selector).text(reply[idx]['fname']);
+                    $(selector).parent().find('.fstatus').fadeOut('slow');
+                    $(selector).parent().find('.fstop').fadeOut('slow');
+                    $(selector).parent().removeClass('alert-warning').addClass('alert-danger');
                 }
                 else if(reply[idx]['fname'] != 'Getting file info'){
-                    $(selector).find('.fstatus').html('<kbd>'+reply[idx]['status']+'</kbd>');
+                    $(selector).text(reply[idx]['fname']);
+                    $(selector).parent().find('.fstatus').html('<span class="badge badge-pill badge-success">'+reply[idx]['status']+'</span>');
+                    if(reply[idx]['status'] == "100%")
+                    {
+                        $(selector).parent().removeClass('alert-warning alert-primary').addClass('alert-success');
+                        $(selector).parent().find('span.fstop').fadeOut('slow');
+                    }
+                    else $(selector).parent().removeClass('alert-warning').addClass('alert-primary');
                 }
             }
             break;
         case "getFileStatus":
+            var items=0;
             for(idx in reply){
-                var selector='.dropdown-menu > a[data-index='+idx+']';
-                $(selector).find('span.fstatus').html(reply[idx]['status']);
+                var selector='#dlModal .modal-body div.alert > a[data-index='+idx+']';
+                $(selector).parent().find('span.fstatus').html('<span class="badge badge-pill badge-success">'+reply[idx]['status']+'</span>');
                 if(reply[idx]['status'] == "100%")
                 {
-                    clearInterval(refreshPcent);
-                    $(selector).find('span.fstop').html('');
+                    items++;
+                    $(selector).parent().removeClass('alert-warning alert-primary').addClass('alert-success');
+                    $(selector).parent().find('span.fstop').fadeOut('slow');
                 }
             }
+            if(items == Object.keys(reply).length)
+                clearInterval(refreshPcent);
             break;
       }
     }
@@ -536,17 +552,19 @@
             success: function(response){
                 $("#myModal").modal('show');
                 document.getElementById('submitUrl').reset();
-                if($('.default-item').length)
-                    $('.default-item').remove();
-                $('.dropdown-menu').append('<a class="dropdown-item" href="#" data-logfile="'+response.logfile+'" data-index="'+response.index+'">'+'<span class="fstatus"><div class="spinner-border text-success spinner-border-sm"></div></span>&nbsp;&nbsp;<span class="fstop">&#10060;</span>&nbsp;&nbsp;<span class="fname text-monospace">Getting file info</span></a>');
-                $('.dropdown-menu a:last .fname').on('click', function(){
-                    logFile=$(this).parent().data('logfile');
-                    $('#logModal').modal('show');
+                if($('.no-url-sub').length)
+                    $('.no-url-sub').remove();
+                $('#dlModal .modal-body').append('<div class="alert alert-warning" role="alert"><a class="alert-link font-weight-bold text-monospace fname" href="#" data-logfile="'+response.logfile+'" data-index="'+response.index+'">Getting file info</a>&nbsp;&nbsp;<span class="fstatus" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+                $('#dlModal .modal-body .fname').last().on('click', function(){
+                    logFile=$(this).data('logfile');
+                    $('#dlModal').modal('hide');
+                    setTimeout(function(){$('#logModal').modal('show');}, 500);
                 });
-                $('.dropdown-menu a:last .fstop').on('click', function(){
-                  index=$(this).parent().data('index');
-                  logFile=$(this).parent().data('logfile');
-                  $('#stopModal').modal('show');
+                $('#dlModal .modal-body .fstop').last().on('click', function(){
+                  index=$(this).prevAll('a.alert-link').data('index');
+                  logFile=$(this).prevAll('a.alert-link').data('logfile');
+                  $('#dlModal').modal('hide');
+                  setTimeout(function(){$('#stopModal').modal('show');}, 500);
                 });
             },
             error: function(xhr, status, error){
@@ -559,7 +577,7 @@
     //Status button click function
     $('button.statBtn').on('click', function(){
         $('#myModal').modal('hide');
-        setTimeout(function(){$('.dropdown-menu a:last .fname').click();}, 500);
+        setTimeout(function(){$('#dlModal .modal-body .fname').last().click();}, 500);
     });
     // Purge files function
     $('#purgeForm button').on('click', function(){
@@ -573,9 +591,9 @@
                 {
                     $('#PurgeModal').modal('hide');
                     $('#PurgeModal').on('hidden.bs.modal', function(){$('#successModal').modal('show'); $('#PurgeModal').off('hidden.bs.modal');});
-                    $('.dropdown-menu > a').remove();
-                    if(!$('.default-item').length)
-                        $('.dropdown-menu').append('<span class="dropdown-item default-item font-weight-bold text-monospace">No Log available</span>');
+                    $('#dlModal .modal-body > div.alert').remove();
+                    if(!$('.no-url-sub').length)
+                        $('#dlModal .modal-body').append('<div class="alert alert-info font-weight-bold text-monospace no-url-sub">No log available</div>');
                 }
                 else if(response == 'wrongPass')
                 {
@@ -722,8 +740,9 @@
     // Display log modal
     var logFile;
     $('.viewLogModal').on('click', function(){
-        $('#logModal').modal('show');
-        logFile=$(this).parent().data('logfile');
+        $('#dlModal').modal('hide');
+        setTimeout(function(){$('#logModal').modal('show');}, 500);
+        logFile=$(this).data('logfile');
     });
     $('#logModal').on('shown.bs.modal', function(){
         fetchLog();
@@ -744,25 +763,24 @@
         $('.logfile').html('<div class="spinner-grow text-success"></div>');
         $('#logModal .modal-footer .progress-bar').attr({"aria-valuenow":"0", "style":"width:0%"});
     });
-    // Get file name and status info for dropdown list
-    $(".dropdown-toggle").dropdown();
-    $('.dropdown').on('shown.bs.dropdown', function(){
+    // Get file name and status info for download list modal
+    $('#dlModal').on('shown.bs.modal', function(){
         refreshFname = setInterval(getFileName, 500);
         refreshPcent = setInterval(getFileStatus, 500);
     });
-    $('.dropdown').on('hidden.bs.dropdown', function(){
+    $('#dlModal').on('hidden.bs.modal', function(){
         clearInterval(refreshFname);
         clearInterval(refreshPcent);
     });
     function getFileName(){
         var payload={"action":"getFileName"};
         var tmp=0;
-        var totalReq=$('.dropdown-menu > a').length;
-        $('.dropdown-menu > a').each(function(){
+        var totalReq=$('#dlModal .modal-body .fname').length;
+        $('#dlModal .modal-body .fname').each(function(){
           var idx=$(this).data("index");
           var logfile=$(this).data("logfile");
-          var fname=$(this).find('.fname');
-          if(fname.html().search('Getting file') >= 0)
+          var fname=$(this).text().trim();
+          if(fname.search('Getting file') >= 0)
             payload[idx]=logfile;
           else tmp++;
         });
@@ -777,17 +795,17 @@
     function getFileStatus(){
         var payload={"action":"getFileStatus"};
         var tmp=0;
-        $('.dropdown-menu > a').each(function(){
+        $('#dlModal .modal-body .fname').each(function(){
             var logfile=$(this).data('logfile');
             var idx=$(this).data("index");
-            if($(this).find('.fname').html().search('Getting file') < 0 && $(this).find('.fname').html().search('Failed to') < 0){
-                var curPcent=$(this).find('.fstatus').text();
+            var fname=$(this).text().trim();
+            if(fname.search('Getting file') < 0 && fname.search('Failed to') < 0){
+                var curPcent=$(this).parent().find('.fstatus').text();
                 if(curPcent.search('100%') < 0)
                 {
                     payload[idx]=logfile;
                     tmp++;
                 }
-                else $(this).find('span.fstop').html('');
             }
         });
         if(tmp){
@@ -798,15 +816,16 @@
     // Stop the download process
     var index;
     var fileName;
-    $('.dropdown-menu a span.fstop').on('click', function(){
-      index=$(this).parent().data('index');
-      logFile=$(this).parent().data('logfile');
-      $('#stopModal').modal('show');
+    $('#dlModal .modal-body span.fstop').on('click', function(){
+      index=$(this).prevAll('a.alert-link').data('index');
+      logFile=$(this).prevAll('a.alert-link').data('logfile');
+      $('#dlModal').modal('hide');
+      setTimeout(function(){$('#stopModal').modal('show');}, 500);
     });
     $('#stopModal').on('shown.bs.modal', function(){
-      fileName=$('.dropdown-menu a[data-index="'+index+'"]').find('span.fname').text();
+      fileName=$('#dlModal .modal-body a[data-index="'+index+'"]').text();
       if(fileName != 'Getting file info' && fileName != 'Failed to download')
-        $('#stopModal div.modal-body').append('<div class="alert alert-info text-break">'+fileName+'</div>');
+        $('#stopModal div.modal-body').append('<div class="alert alert-info text-break text-monospace">'+fileName+'</div>');
       else fileName='NA';
     });
     $('#stopBtn').on('click', function(){
@@ -819,10 +838,12 @@
         dataType: 'json',
         success: function(response){
           if(response.msg == 'done'){
-            $('#stopModal div.modal-body').html('<span class="font-weight-bold text-monospace text-info">Process Terminated</span>');
-            $('.dropdown-menu a[data-index="'+index+'"]').remove();
-            if(response.count == 0)
-              $('.dropdown-menu').append('<span class="dropdown-item default-item font-weight-bold text-monospace">No Log available</span>');
+            $('#stopModal div.modal-body').html('<span class="font-weight-bold text-monospace text-primary">Process Terminated</span>');
+            $('#dlModal .modal-body a[data-index="'+index+'"]').parent().remove();
+            if(response.count == 0){
+                $('#dlModal .modal-body div').remove();
+                $('#dlModal .modal-body').append('<div class="alert alert-info font-weight-bold text-monospace no-url-sub">No log available</div>');
+            }
           }
           else
             $('#stopModal div.modal-body').html('<span class="font-weight-bold text-monospace text-warning">Some error occurred</span>');
@@ -927,6 +948,10 @@
         $('#pkillbody .pkillList').each(function(){$(this).remove()});
         $('#pkillbody span.succmsg').remove();
         $('#pkillmodal div.modal-footer').remove();
+    });
+    // Display download list modal
+    $('.dlistbtn').on('click', function(){
+        $('#dlModal').modal('show');
     });
   });
  </script>
