@@ -450,14 +450,35 @@
   <script type="text/javascript" src="js/bootstrap.min.js"></script>
   <!-- MDB core JavaScript -->
   <script type="text/javascript" src="js/mdb.min.js"></script>
-  <!-- Particles.js plugin
-  <script type="text/javascript" src="js/particles.js"></script>
-  <script type="text/javascript" src="js/app.js"></script> -->
+  <!-- Socket.io JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js" integrity="sha512-aC5ZfKOuGRUiJCv+E/EIWsj49E02BQpuLQbixZe+16Lm1R6AepHZA1xvY92XBQNNbwQoqG4DXCGxwoxBFb5Q1A==" crossorigin="anonymous"></script>
+
   <!-- Initializations -->
   <script type="text/javascript">
   $(document).ready(function(){
+    //socket.io connection initialization
+    var serverUrl="http://"+window.location.host+":8080";
+    const socket = io(serverUrl);
+
+    socket.on("connect", () => {
+      if(socket.connected)
+      {
+        console.log("socket connection created id:"+socket.id);
+        $('#wsAlertModal').modal("hide");
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("connection terminated");
+      $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
+    });
+
+    socket.on("connect_error", (error) => {
+      console.log("unable to connect "+error);
+      $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
+    });
     // WebSocket connection initialization
-    var socket=new WebSocket('ws://'+window.location.host+':8080');
+    /*var socket=new WebSocket('ws://'+window.location.host+':8080');
     setTimeout(function(){
         if(socket.readyState != socket.OPEN)
             $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
@@ -514,7 +535,7 @@
                 clearInterval(refreshPcent);
             break;
       }
-    }
+    }*/
     // Storage info modal
     $('.storage_info').on('click', function(){
         $('#storageInfo').modal('show');
