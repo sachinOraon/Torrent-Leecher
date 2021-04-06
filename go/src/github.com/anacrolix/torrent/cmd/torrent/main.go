@@ -1,10 +1,11 @@
 // Downloads torrents from the command-line.
-// Taken from github.com/anacrolix/torrent/cmd/torrent
 package main
 
 import (
 	"expvar"
 	"fmt"
+	"io"
+	stdLog "log"
 	"net"
 	"net/http"
 	"os"
@@ -12,11 +13,13 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"bufio"
-	"io/ioutil"
 	"math/rand"
+	"bufio"
 
+	"github.com/alexflint/go-arg"
 	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/dustin/go-humanize"
 	"golang.org/x/xerrors"
 
@@ -32,32 +35,44 @@ import (
 	"github.com/anacrolix/torrent/storage"
 )
 
-func torrentBar(t *torrent.Torrent, pieceStates bool, logFile *os.File, updatedAt time.Time, prevDownload uint64) {
+/*
+	Error Code	Reason
+		2		error adding magnet (invalid magnet link)
+		3		error downloading torrent file (invalid .torrent file link)
+		4		error loading torrent file (unable to get .torrent file metainfo)
+		5		error adding torrent (unable to initiate download process)
+*/
+
+// to store the torrent file info
+type TorrentFileInfo struct {
+	url			string
+	name		string
+	size		uint64
+	avg_speed	string
+	pieces		int
+	files		int
+	start_time	time.Time
+}
+var torrent_file TorrentFileInfo
+
+func torrentBar(t *torrent.Torrent, pieceStates bool, updatedAt time.Time, prevDownload uint64) {
 	go func() {
-		// wait until metadata is fetched
 		if t.Info() == nil {
-			//log.Printf("[*] Fetching info for %q", t.Name())
+			log.Print("getting info for ", t.Name())
 			<-t.GotInfo()
 		}
-		//log.Printf("[*] File info received : %q", t.Name())
-
-		// insert fetched metadata into logfile
-		w := bufio.NewWriter(logFile)
-		fmt.Fprintf(w, "[*] Name   : %s\n[*] Size   : %s\n[*] Pieces : %d\n", t.Name(), humanize.Bytes(uint64(t.Length())), t.NumPieces())
-		w.Flush()
-
+		// store the torrent file info into struct
+		torrent_file.name = t.Name()
+		torrent_file.size = uint64(t.Length())
+		torrent_file.pieces = t.NumPieces()
+		torrent_file.files = len(t.Files())
+		var lastLine string
 		for {
-			// wait for a second to update download status
-			time.Sleep(time.Second)
-
-			// compute download progress
 			var completedPieces, partialPieces int
 			psrs := t.PieceStateRuns()
-			completed := 0
 			for _, r := range psrs {
 				if r.Complete {
 					completedPieces += r.Length
-					completed++
 				}
 				if r.Partial {
 					partialPieces += r.Length
@@ -76,130 +91,156 @@ func torrentBar(t *torrent.Torrent, pieceStates bool, logFile *os.File, updatedA
 			prevDownload = bytes
 			updatedAt = now
 
-			// insert data into logfile
-			fmt.Fprintf(w, "[*] Fetched: %6s\n[*] Speed  : %6s/s\n[*] %3.0f%%", humanize.Bytes(uint64(t.BytesCompleted())), humanize.Bytes(uint64(speed)), float64(t.BytesCompleted())/float64(t.Length())*100)
-			w.Flush()
-			logFile.Seek(-50, 1)
+			line := fmt.Sprintf("{\"filename\":%q,\"size\":\"%s\",\"downloaded\":\"%s\",\"speed\":\"%s/s\",\"total_pieces\":%d,\"dwnld_pieces\":%d,\"percent\":\"%.0f%%\"}", t.Name(), humanize.Bytes(uint64(t.Length())), humanize.Bytes(uint64(t.BytesCompleted())), humanize.Bytes(uint64(speed)), t.NumPieces(), completedPieces, float64(t.BytesCompleted())/float64(t.Length())*100)
 
-			/*log.Printf(
-				"%6s|%6s|%3d|%3d|%3d|%3.0f%%|%6s/s",
-				humanize.Bytes(uint64(t.BytesCompleted())),
-				humanize.Bytes(uint64(t.Length())),
-				completedPieces,
-				t.NumPieces(),
-				partialPieces,
-				float64(t.BytesCompleted())/float64(t.Length())*100,
-				humanize.Bytes(uint64(speed)),
-			)*/
-
+			// display the line to stdout
+			if line != lastLine {
+				lastLine = line
+				os.Stdout.WriteString(line)
+			}
 			if pieceStates {
 				fmt.Println(psrs)
 			}
+			time.Sleep(500 * time.Millisecond)
 		}
 	}()
 }
 
-func addTorrents(client *torrent.Client, logFile *os.File) error {
-	// create iobuffer for inserting data into logfile
-	w := bufio.NewWriter(logFile)
-	// insert the start datetime in logfile
-	clk := time.Now()
-	fmt.Fprintf(w, "[*] [%d/%d/%d %d:%d:%d]\n[*] Getting file info\n[*] URL    : %s\n", clk.Day(), clk.Month(), clk.Year(), clk.Hour(), clk.Minute(), clk.Second(), os.Args[1])
-	w.Flush()
-	//for _, arg := range flags.Torrent {
+type stringAddr string
+
+func (stringAddr) Network() string   { return "" }
+func (me stringAddr) String() string { return string(me) }
+
+func resolveTestPeers(addrs []string) (ret []torrent.PeerInfo) {
+	for _, ta := range flags.TestPeer {
+		ret = append(ret, torrent.PeerInfo{
+			Addr: stringAddr(ta),
+		})
+	}
+	return
+}
+
+func addTorrents(client *torrent.Client) error {
+	testPeers := resolveTestPeers(flags.TestPeer)
+	for _, arg := range flags.Torrent {
 		t, err := func() (*torrent.Torrent, error) {
-			if strings.HasPrefix(os.Args[1], "magnet:") {
-				t, err := client.AddMagnet(os.Args[1])
+			if strings.HasPrefix(arg, "magnet:") {
+				t, err := client.AddMagnet(arg)
 				if err != nil {
-					return nil, xerrors.Errorf("[*] Error adding magnet: %w", err)
+					os.Exit(2)
+					//return nil, xerrors.Errorf("error adding magnet: %w", err)
 				}
 				return t, nil
-			} else if strings.HasPrefix(os.Args[1], "http://") || strings.HasPrefix(os.Args[1], "https://") {
-				response, err := http.Get(os.Args[1])
+			} else if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") {
+				response, err := http.Get(arg)
 				if err != nil {
-					return nil, xerrors.Errorf("[*] Error downloading torrent file: %s", err)
+					os.Exit(3)
+					//return nil, xerrors.Errorf("Error downloading torrent file: %s", err)
 				}
+
 				metaInfo, err := metainfo.Load(response.Body)
 				defer response.Body.Close()
 				if err != nil {
-					fmt.Fprintf(w, "[*] Unable to download .torrent file\n[*] Process Terminated")
-					w.Flush()
-					return nil, xerrors.Errorf("[*] Error loading torrent file %q: %s\n", os.Args[1], err)
+					os.Exit(4)
+					//return nil, xerrors.Errorf("error loading torrent file %q: %s\n", arg, err)
 				}
 				t, err := client.AddTorrent(metaInfo)
 				if err != nil {
-					return nil, xerrors.Errorf("[*] Unable to add torrent: %w", err)
+					os.Exit(5)
+					//return nil, xerrors.Errorf("adding torrent: %w", err)
 				}
 				return t, nil
-			} else if strings.HasPrefix(os.Args[1], "infohash:") {
-				t, _ := client.AddTorrentInfoHash(metainfo.NewHashFromHex(strings.TrimPrefix(os.Args[1], "infohash:")))
+			} else if strings.HasPrefix(arg, "infohash:") {
+				t, _ := client.AddTorrentInfoHash(metainfo.NewHashFromHex(strings.TrimPrefix(arg, "infohash:")))
 				return t, nil
 			} else {
-				metaInfo, err := metainfo.LoadFromFile(os.Args[1])
+				metaInfo, err := metainfo.LoadFromFile(arg)
 				if err != nil {
-					fmt.Fprintf(w, "[*] Unable to get file info\n[*] Process Terminated")
-					w.Flush()
-					return nil, xerrors.Errorf("[*] Error loading torrent file %q: %s\n", os.Args[1], err)
+					return nil, xerrors.Errorf("error loading torrent file %q: %s\n", arg, err)
 				}
 				t, err := client.AddTorrent(metaInfo)
 				if err != nil {
-					return nil, xerrors.Errorf("[*] Error adding torrent: %w", err)
+					return nil, xerrors.Errorf("adding torrent: %w", err)
 				}
 				return t, nil
 			}
 		}()
 		if err != nil {
-			return xerrors.Errorf("[*] Error adding torrent for %q: %w", os.Args[1], err)
+			return xerrors.Errorf("adding torrent for %q: %w", arg, err)
 		}
-
-		// some vars for calculating speed
+		// vars for calculating speed
 		var prevDownload uint64
 		prevDownload = 0
 
-		// start the download process
-		if flags.Progress {
-			torrentBar(t, flags.PieceStates, logFile, clk, prevDownload)
-		}
+		loc, _ := time.LoadLocation("Asia/Calcutta")
+		start_time := time.Now().In(loc)
+		torrent_file.start_time = start_time
+		torrent_file.url = flags.Torrent[0]
 
-		t.AddPeers(func() (ret []torrent.Peer) {
-			for _, ta := range flags.TestPeer {
-				ret = append(ret, torrent.Peer{
-					Addr: ta,
-				})
-			}
-			return
-		}())
+		if flags.Progress {
+			torrentBar(t, flags.PieceStates, start_time, prevDownload)
+		}
+		t.AddPeers(testPeers)
 		go func() {
 			<-t.GotInfo()
-			t.DownloadAll()
+			if len(flags.File) == 0 {
+				t.DownloadAll()
+			} else {
+				for _, f := range t.Files() {
+					for _, fileArg := range flags.File {
+						if f.DisplayPath() == fileArg {
+							f.Download()
+						}
+					}
+				}
+			}
 		}()
-	//}
+	}
 	return nil
 }
 
-var flags = struct {
-	Mmap            bool           `help:"memory-map torrent data"`
-	TestPeer        []*net.TCPAddr `help:"addresses of some starting peers"`
-	Seed            bool           `help:"seed after download is complete"`
-	Addr            string         `help:"network listen addr"`
-	UploadRate      tagflag.Bytes  `help:"max piece bytes to send per second"`
-	DownloadRate    tagflag.Bytes  `help:"max bytes per second down from peers"`
-	Debug           bool
+var flags struct {
+	Debug bool
+	Stats *bool
+
+	*DownloadCmd      `arg:"subcommand:download"`
+	*ListFilesCmd     `arg:"subcommand:list-files"`
+	*SpewBencodingCmd `arg:"subcommand:spew-bencoding"`
+	*AnnounceCmd      `arg:"subcommand:announce"`
+}
+
+type SpewBencodingCmd struct{}
+
+type DownloadCmd struct {
+	Mmap            bool          `help:"memory-map torrent data"`
+	TestPeer        []string      `help:"addresses of some starting peers"`
+	Seed            bool          `help:"seed after download is complete"`
+	Addr            string        `help:"network listen addr"`
+	UploadRate      tagflag.Bytes `help:"max piece bytes to send per second" default:"-1"`
+	DownloadRate    tagflag.Bytes `help:"max bytes per second down from peers" default:"-1"`
 	PackedBlocklist string
-	Stats           *bool
 	PublicIP        net.IP
-	Progress        bool
+	Progress        bool `default:"true"`
 	PieceStates     bool
 	Quiet           bool `help:"discard client logging"`
-	Dht             bool
-	tagflag.StartPos
-	Torrent []string `arity:"+" help:"torrent file path or magnet uri"`
-}{
-	UploadRate:   -1,
-	DownloadRate: -1,
-	Progress:     true,
-	Dht:          true,
-	Quiet:        false,
+	Dht             bool `default:"true"`
+
+	TcpPeers        bool `default:"true"`
+	UtpPeers        bool `default:"true"`
+	Webtorrent      bool `default:"true"`
+	DisableWebseeds bool
+
+	Ipv4 bool `default:"true"`
+	Ipv6 bool `default:"true"`
+	Pex  bool `default:"true"`
+
+	File    []string
+	Torrent []string `arity:"+" help:"torrent file path or magnet uri" arg:"positional"`
+	Logfile string
+}
+
+type ListFilesCmd struct {
+	TorrentPath string `arg:"positional"`
 }
 
 func stdoutAndStderrAreSameFile() bool {
@@ -219,32 +260,81 @@ func exitSignalHandlers(notify *missinggo.SynchronizedEvent) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	for {
-		log.Printf("[*] Stop signal received: %+v", <-c)
+		log.Printf("close signal received: %+v", <-c)
 		notify.Set()
 	}
 }
 
 func main() {
 	if err := mainErr(); err != nil {
-		log.Printf("[*] Error in main: %v", err)
+		log.Printf("error in main: %v", err)
 		os.Exit(1)
 	}
 }
 
 func mainErr() error {
-	tagflag.Parse(&flags)
+	stdLog.SetFlags(stdLog.Flags() | stdLog.Lshortfile)
+	p := arg.MustParse(&flags)
+	switch {
+	case flags.AnnounceCmd != nil:
+		return announceErr()
+	//case :
+	//	return announceErr(flags.Args, parser)
+	case flags.DownloadCmd != nil:
+		return downloadErr()
+	case flags.ListFilesCmd != nil:
+		mi, err := metainfo.LoadFromFile(flags.ListFilesCmd.TorrentPath)
+		if err != nil {
+			return fmt.Errorf("loading from file %q: %v", flags.ListFilesCmd.TorrentPath, err)
+		}
+		info, err := mi.UnmarshalInfo()
+		if err != nil {
+			return fmt.Errorf("unmarshalling info from metainfo at %q: %v", flags.ListFilesCmd.TorrentPath, err)
+		}
+		for _, f := range info.UpvertedFiles() {
+			fmt.Println(f.DisplayPath(&info))
+		}
+		return nil
+	case flags.SpewBencodingCmd != nil:
+		d := bencode.NewDecoder(os.Stdin)
+		for i := 0; ; i++ {
+			var v interface{}
+			err := d.Decode(&v)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("decoding message index %d: %w", i, err)
+			}
+			spew.Dump(v)
+		}
+		return nil
+	default:
+		p.Fail(fmt.Sprintf("unexpected subcommand: %v", p.Subcommand()))
+		panic("unreachable")
+	}
+}
+
+func downloadErr() error {
 	defer envpprof.Stop()
 	clientConfig := torrent.NewDefaultClientConfig()
+	clientConfig.DisableWebseeds = flags.DisableWebseeds
+	clientConfig.DisableTCP = !flags.TcpPeers
+	clientConfig.DisableUTP = !flags.UtpPeers
+	clientConfig.DisableIPv4 = !flags.Ipv4
+	clientConfig.DisableIPv6 = !flags.Ipv6
 	clientConfig.DisableAcceptRateLimiting = true
 	clientConfig.NoDHT = !flags.Dht
 	clientConfig.Debug = flags.Debug
 	clientConfig.Seed = flags.Seed
 	clientConfig.PublicIp4 = flags.PublicIP
 	clientConfig.PublicIp6 = flags.PublicIP
+	clientConfig.DisablePEX = !flags.Pex
+	clientConfig.DisableWebtorrent = !flags.Webtorrent
 	if flags.PackedBlocklist != "" {
 		blocklist, err := iplist.MMapPackedFile(flags.PackedBlocklist)
 		if err != nil {
-			return xerrors.Errorf("[*] Error blocklist: %v", err)
+			return xerrors.Errorf("loading blocklist: %v", err)
 		}
 		defer blocklist.Close()
 		clientConfig.IPBlocklist = blocklist
@@ -261,23 +351,22 @@ func mainErr() error {
 	if flags.DownloadRate != -1 {
 		clientConfig.DownloadRateLimiter = rate.NewLimiter(rate.Limit(flags.DownloadRate), 1<<20)
 	}
-	clientConfig.Logger = log.Discard
 	if flags.Quiet {
 		clientConfig.Logger = log.Discard
 	}
-	// set randomly generated listen port
-	rand.Seed(time.Now().UnixNano())
-	clientConfig.ListenPort = rand.Intn(45000 - 40000 + 1) + 40000
 
 	var stop missinggo.SynchronizedEvent
 	defer func() {
 		stop.Set()
 	}()
 
-	// create a new client for this session
+	// set randomly generated listen port
+	rand.Seed(time.Now().UnixNano())
+	clientConfig.ListenPort = rand.Intn(45000 - 40000 + 1) + 40000
+
 	client, err := torrent.NewClient(clientConfig)
 	if err != nil {
-		return xerrors.Errorf("[*] Unable to create client: %v", err)
+		return xerrors.Errorf("creating client: %v", err)
 	}
 	defer client.Close()
 	go exitSignalHandlers(&stop)
@@ -292,40 +381,34 @@ func mainErr() error {
 		client.WriteStatus(w)
 	})
 
-	// create a log file for storing download status
-	file, err := os.OpenFile(os.Args[2], os.O_WRONLY|os.O_CREATE, 0666)
+	err = addTorrents(client)
 	if err != nil {
-		fmt.Println("[*] Unable to create logfile")
-		os.Exit(1)
+		return fmt.Errorf("adding torrents: %w", err)
 	}
-
-	// bind torrent link to created client
-	addTorrents(client, file)
-
-	// wait for client session to terminate
+	defer outputStats(client)
 	if client.WaitAll() {
-		data, err := ioutil.ReadFile(os.Args[2])
-		if err == nil {
-			if !strings.Contains(string(data[:]), "Process Terminated") {
-				// insert ending time in logfile
-				eclk := time.Now()
-				w := bufio.NewWriter(file)
-				file.Seek(-8, 2)
-				fmt.Fprintf(w, "[*] 100%%\n[*] Completed\n[*] [%d/%d/%d %d:%d:%d]", eclk.Day(), eclk.Month(), eclk.Year(), eclk.Hour(), eclk.Minute(), eclk.Second())
-				w.Flush()
-			}
-			//else { log.Printf("Fatal error") }
+		// create a log file for storing download status
+		logfile, err := os.OpenFile(flags.Logfile, os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			fmt.Errorf("unable to create logfile: %s", flags.Logfile)
+			os.Exit(1)
 		}
-		defer file.Close()
-		//log.Print("[*] Torrent downloaded")
+		loc, _ := time.LoadLocation("Asia/Calcutta")
+		eclk := time.Now().In(loc)
+		torrent_file.avg_speed = humanize.Bytes(torrent_file.size/uint64(eclk.Unix() - torrent_file.start_time.Unix()))
+		// create iobuffer for inserting data into logfile
+		w := bufio.NewWriter(logfile)
+		fmt.Fprintf(w, "[*] URL      : %s\n[*] Name     : %s\n[*] Size     : %s\n[*] Files    : %d\n[*] Pieces   : %d\n[*] Speed    : %s/s\n[*] Started  : %d-%d-%d %d:%d:%d\n[*] Ended    : %d-%d-%d %d:%d:%d\n[*] Duration : %s", torrent_file.url, torrent_file.name, humanize.Bytes(torrent_file.size), torrent_file.files, torrent_file.pieces, torrent_file.avg_speed, torrent_file.start_time.Day(), torrent_file.start_time.Month(), torrent_file.start_time.Year(), torrent_file.start_time.Hour(), torrent_file.start_time.Minute(), torrent_file.start_time.Second(), eclk.Day(), eclk.Month(), eclk.Year(), eclk.Hour(), eclk.Minute(), eclk.Second(), time.Since(torrent_file.start_time).Round(time.Second).String())
+		w.Flush()
+		defer logfile.Close()
+		log.Print("downloaded ALL the torrents")
 	} else {
-		return xerrors.New("[*] Unable to download")
+		return xerrors.New("y u no complete torrents?!")
 	}
 	if flags.Seed {
 		outputStats(client)
 		<-stop.C()
 	}
-	outputStats(client)
 	return nil
 }
 

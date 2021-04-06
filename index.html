@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Torrent Downloader</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css">
+  <!-- Bootstrap core CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <!-- Material Design Bootstrap -->
+  <link href="css/mdb.min.css" rel="stylesheet">
+  <!-- Your custom styles (optional) -->
+  <link href="css/style.min.css" rel="stylesheet">
+  <style type="text/css">
+    @media (min-width: 800px) and (max-width: 850px) {
+      .navbar:not(.top-nav-collapse) {
+        background: #1C2331 !important;
+      }
+    }
+    @font-face {
+      font-family: 'tale_of_hawksregular';
+      src: url('font/tale/tale_of_hawks-webfont.woff2') format('woff2'),
+           url('font/tale/tale_of_hawks-webfont.woff') format('woff');
+      font-weight: bold;
+      font-style: normal;
+    }
+    .modal-open .navbar-expand-lg {
+        padding-right: 16px !important;
+    }
+  </style>
+</head>
+
+<body>
+<!-- websocket connection alert modal -->
+<div class="modal fade" id="wsAlertModal">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title text-danger font-weight-bold">Error</h4>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body font-weight-bold text-monospace">
+        Failed to establish websocket connection to the server. Kindly try again later.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- process info modal -->
+<div class="modal fade" id="processLst">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Process Info</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body processinfo"><div class="spinner-grow text-info"></div></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- storage info modal -->
+<div class="modal fade" id="storageInfo">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Storage Info</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body storage-info"><div class="spinner-grow text-info"></div></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- download list modal -->
+<div class="modal fade" id="dlModal">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Download List</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body"></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal fade" id="logModal">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">File Info</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body"><div class="spinner-grow text-success"></div></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal fade" id="PurgeModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Purge Files</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+       <div class="alert alert-danger">
+        Purging file will remove all the downloaded files and logs from the server. Use this to free up space in one go.
+       </div>
+       <form id='purgeForm'>
+        <div class="form-group">
+         <label for="pwd">Password:</label>
+         <input type="password" class="form-control" placeholder="Enter password" id="pwd" name='purge' required>
+        </div>
+        <button type="button" class="btn btn-primary">Submit</button>
+       </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal fade" id="successModal">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Information</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body"><span class="text-success text-monospace font-weight-bold">Files Deleted Successfully</span></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal fade" id="freeUpForm">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Delete Files</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+       <div class="alert alert-info">
+        The next page will bring up a list of user files stored on the server and provides an option to select and delete unused files.
+       </div>
+       <form id="delFileForm">
+        <div class="form-group">
+         <label for="pwd">Password:</label>
+         <input type="password" class="form-control" placeholder="Enter password" id="pwdDf" name='listFiles' required>
+        </div>
+        <button type="button" class="btn btn-primary">Submit</button>
+       </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal fade" id="showFiles">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Files Available</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body filelist"></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger d-none delFileBtn">Delete</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal fade" id="stopModal">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Alert</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body"><span class="text-danger text-monospace font-weight-bold">Do you want to stop the download?</span></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary btn-sm" id="stopBtn">Yes</button>
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal fade" id="pkillmodal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Process Kill</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <div id="pkillform">
+            <div class="form-group">
+                <label for="pwd">Password:</label>
+                <input type="password" class="form-control" id="pkillpass" placeholder="Enter password">
+            </div>
+            <button type="button" class="btn btn-primary" id="pkillpassBtn">Submit&nbsp;<span class="spinner-grow spinner-grow-sm d-none"></span></button>
+        </div>
+        <div id="pkillbody" class='d-none'></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  <!-- Navbar -->
+  <nav class="navbar fixed-top navbar-expand-lg navbar-dark scrolling-navbar">
+    <div class="container">
+
+      <!-- Brand -->
+      <a class="navbar-brand waves-effect" href="http://www.github.com/sachinOraon/Torrent-Leecher" target="_blank">
+        <i class="fab fa-github fa-lg"></i>&nbsp;<strong>sachinOraon</strong>
+      </a>
+      <!-- Collapse -->
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Links -->
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+
+        <!-- Left -->
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html"><i class="fas fa-redo-alt"></i> Reload</a><span class="sr-only">(current)</span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link dlistbtn" href="#"><i class="fas fa-list-ul"></i> Tasks</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-toggle="modal" data-target="#PurgeModal" data-backdrop="static"><i class="fas fa-skull-crossbones"></i> Purge Files</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-toggle="modal" data-target="#freeUpForm" data-backdrop="static"><i class="fas fa-trash-alt"></i> Delete Files</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://unblocked-pw.github.io/" target="_blank"><i class="far fa-grin-stars"></i> Torrent Sites</a>
+          </li>
+        </ul>
+
+      </div>
+
+    </div>
+  </nav>
+  <!-- Navbar -->
+
+  <!-- Full Page Intro -->
+  <div id="particles-js" class="view" style="background-image: url('https://www.hdwallpapers.in/download/abstract_dark_colorful_digital_art_4k_hd_abstract-1280x720.jpg'); background-repeat: no-repeat; background-size: cover;">
+
+    <!-- Mask & flexbox options-->
+    <div class="mask rgba-black-light d-flex justify-content-center align-items-center">
+
+      <!-- Content -->
+      <div class="text-center white-text mx-5 wow fadeIn">
+        <h1 class="mb-4 display-3" style="font-family: 'tale_of_hawksregular'; text-shadow: 0 0 10px #007cff, 0 0 12px #00c3ff, 0 0 14px #6800ff, 0 0 16px #f00, 0 0 18px #f00;"><strong>Torrent &nbsp;Downloader</strong></h1><hr>
+
+            <form id='submitUrl'>
+              <div class="form-group">
+                <div class="input-group mx-auto">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroup-sizing-default"><i class="fas fa-magnet"></i></span>
+                  </div>
+                  <input type="text" class="form-control" name='torrent_url' aria-label="torrent url" aria-describedby="inputGroup-sizing-default" placeholder="Paste .torrent file url or magnet link" required>
+                </div>
+               </div>
+              <button type="button" class="btn btn-outline-white btn-lg submitBtn">Download <i class="fas fa-arrow-circle-down fa-lg"></i></button>
+            </form>
+
+      </div>
+      <!--/.Content -->
+
+    </div>
+    <!--/.Mask & flexbox options-->
+
+  </div>
+  <!--/.Full Page Intro -->
+
+  <!--Footer-->
+  <footer class="page-footer text-center font-small wow fadeIn">
+
+    <!--Call to action-->
+    <div class="pt-1">
+        <small class="text-monospace">Disclaimer : We believe in a right to privacy, not piracy. While this site is targeted towards torrents, we do not endorse or condone any inappropriate use of torrents and copyright protected materials. This site was created for educational purpose only demonstrating the use of <a href="https://github.com/anacrolix/torrent" target="_blank">anacrolix&apos;s torrent</a> library. Kindly follow the rules and guidelines of downloading or spreading torrents as per your government regulations.</small>
+    </div>
+    <!--/.Call to action-->
+
+    <!--Copyright-->
+    <div class="footer-copyright py-3">
+      © 2021 Copyright:
+      <a href="https://www.github.com/sachinOraon" target="_blank"> @sachinOraon</a>
+    </div>
+    <!--/.Copyright-->
+
+  </footer>
+  <!--/.Footer-->
+
+  <!-- SCRIPTS -->
+  <!-- JQuery -->
+  <script type="text/javascript" src="js/jquery-3.4.1.min.js"></script>
+  <!-- Bootstrap tooltips -->
+  <script type="text/javascript" src="js/popper.min.js"></script>
+  <!-- Bootstrap core JavaScript -->
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <!-- MDB core JavaScript -->
+  <script type="text/javascript" src="js/mdb.min.js"></script>
+  <!-- Socket.io JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js" integrity="sha512-eVL5Lb9al9FzgR63gDs1MxcDS2wFu3loYAgjIH0+Hg38tCS8Ag62dwKyH+wzDb+QauDpEZjXbMn11blw8cbTJQ==" crossorigin="anonymous"></script>
+
+  <!-- Initializations -->
+  <script type="text/javascript">
+
+  $(document).ready(function(){
+    //socket.io connection initialization
+    var serverUrl="http://"+window.location.host+":8080";
+    const socket = io(serverUrl);
+
+    socket.on("connect", () => {
+      if(socket.connected)
+      {
+        console.log("socket connection created id:"+socket.id);
+        $('#wsAlertModal').modal("hide");
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("connection terminated");
+      $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
+    });
+
+    socket.on("connect_error", (error) => {
+      console.log("unable to connect "+error);
+      $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
+    });
+
+    // put session data into download list modal
+    socket.on("sess_data", req_lst => {
+      if(req_lst.length){
+        for(let i=0; i<req_lst.length; i++)
+        {
+          $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+req_lst[i]+'" data-index="'+(i+1)+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+        }
+      }
+      else $('#dlModal .modal-body').append('<div class="alert alert-info font-weight-bold text-monospace no-url-sub">No url submitted</div>');
+    });
+
+    // Display download list modal
+    $('.dlistbtn').on('click', function(){
+        $('#dlModal').modal('show');
+    });
+
+    // Download button click event
+    $('.submitBtn').on('click', function(){
+        var url=$('input[name="torrent_url"]').val().trim();
+        // Avoid taking empty data
+        if(url === ""){
+            // display alert tooltip
+            $('input[name="torrent_url"]').tooltip({
+                trigger: "click",
+                html: true,
+                title: '<span class="font-weight-bold">Empty URL given</span>',
+                placement: "top"
+            });
+            $('input[name="torrent_url"]').tooltip('show');
+            setTimeout(() => { $('input[name="torrent_url"]').tooltip('dispose'); }, 2000);
+        }
+        else
+        {
+          // send the request to server
+          let payload={"url":$('input[name="torrent_url"]').val().trim()};
+          socket.emit("torrent_url", payload, (response) => {
+            if(response.status == "ok")
+            {
+              document.getElementById('submitUrl').reset();
+              if($('.no-url-sub').length)
+                $('.no-url-sub').remove();
+              $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+response.logfile+'" data-index="'+response.index+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+              $("#dlModal").modal('show');
+            }
+          });
+        }
+    });
+
+    // Display downloading file info in download list modal
+    socket.on("file_info", output => {
+      var node='#dlModal .modal-body div.alert > a[data-index='+output.index+']';
+      $(node).text(output.filename);
+      $(node).parent().removeClass('alert-primary').addClass('alert-warning');
+      $(node).parent().find('.fpercent').html('<span class="badge badge-pill badge-primary">'+output.percent+'</span>');
+      $(node).parent().find('.fsize').html('<span class="badge badge-pill badge-secondary">'+output.downloaded+'/'+output.size+'</span>');
+      $(node).parent().find('.fspeed').html('<span class="badge badge-pill badge-success">'+output.speed+'</span>');
+    });
+
+    // Do some ui changes when process completes
+    socket.on("dwnld_exit_code", data => {
+      var node='#dlModal .modal-body div.alert > a[data-index='+data.idx+']';
+      if(data.code == "0"){
+        $(node).parent().removeClass('alert-warning').addClass('alert-success');
+        $(node).parent().find('span.fpercent .badge').text('100%');
+        $(node).parent().find('span.fsize .badge').text(data.fsize);
+        $(node).parent().find('span.fspeed').fadeOut('slow');
+        $(node).parent().find('span.fstop').fadeOut('slow');
+        // add click event to view the logfile
+        $(node).on('click', function(){
+          let logfile=$(this).data('logfile');
+          // send the request to server
+          socket.emit("get_log", {file: logfile}, (response) => {
+            if(response.status == "ok")
+            {
+              $('#dlModal').modal('hide');
+              setTimeout(function(){$('#logModal').modal('show');}, 500);
+            }
+          });
+        });
+      }
+      else{
+        // display err msg
+        let err_msg;
+        switch(data.code){
+          case "2" :err_msg='Error adding magnet (invalid magnet link)'; break;
+          case "3" :err_msg='Error downloading torrent file (invalid .torrent file link)'; break;
+          case "4" :err_msg='Error loading torrent file (unable to get .torrent file metainfo)'; break;
+          case "5" :err_msg='Error adding torrent (unable to initiate download process)'; break;
+          default  :err_msg='Failed to download (invalid input given)';
+        }
+        $(node).text(err_msg);
+        $(node).parent().removeClass('alert-primary').addClass('alert-danger');
+        $(node).parent().find('span.fpercent').fadeOut('slow');
+        $(node).parent().find('span.fstop').fadeOut('slow');
+      }
+    });
+
+    // put the log data in logModal
+    socket.on("log_data", data => {
+      $('#logModal .modal-body').html('<pre style="overflow: hidden; text-overflow: ellipsis;">'+data+'</pre>');
+    });
+
+    // put spinner after closing logModal
+    $('#logModal').on('hidden.bs.modal', function(){
+      $('#logModal .modal-body').html('<div class="spinner-grow text-success"></div>');
+    });
+  });
+
+ </script>
+
+</body>
+
+</html>

@@ -37,6 +37,9 @@ type ClientConfig struct {
 	// Don't create a DHT.
 	NoDHT            bool `long:"disable-dht"`
 	DhtStartingNodes func(network string) dht.StartingNodesGetter
+	// Called for each anacrolix/dht Server created for the Client.
+	ConfigureAnacrolixDhtServer func(*dht.ServerConfig)
+
 	// Never send chunks to peers.
 	NoUpload bool `long:"no-upload"`
 	// Disable uploading even when it isn't fair.
@@ -102,6 +105,7 @@ type ClientConfig struct {
 	MinDialTimeout             time.Duration
 	EstablishedConnsPerTorrent int
 	HalfOpenConnsPerTorrent    int
+	TotalHalfOpenConns         int
 	// Maximum number of peer addresses in reserve.
 	TorrentPeersHighWater int
 	// Minumum number of peers before effort is made to obtain more peers.
@@ -117,17 +121,30 @@ type ClientConfig struct {
 	PublicIp4 net.IP
 	PublicIp6 net.IP
 
+	// Accept rate limiting affects excessive connection attempts from IPs that fail during
+	// handshakes or request torrents that we don't have.
 	DisableAcceptRateLimiting bool
 	// Don't add connections that have the same peer ID as an existing
 	// connection for a given Torrent.
-	dropDuplicatePeerIds bool
+	DropDuplicatePeerIds bool
+	// Drop peers that are complete if we are also complete and have no use for the peer. This is a
+	// bit of a special case, since a peer could also be useless if they're just not interested, or
+	// we don't intend to obtain all of a torrent's data.
+	DropMutuallyCompletePeers bool
 
 	ConnTracker *conntrack.Instance
 
 	// OnQuery hook func
 	DHTOnQuery func(query *krpc.Msg, source net.Addr) (propagate bool)
 
-	DefaultRequestStrategy RequestStrategyMaker
+	DefaultRequestStrategy requestStrategyMaker
+
+	Extensions PeerExtensionBits
+
+	DisableWebtorrent bool
+	DisableWebseeds   bool
+
+	Callbacks Callbacks
 }
 
 func (cfg *ClientConfig) SetListenAddr(addr string) *ClientConfig {
@@ -148,6 +165,7 @@ func NewDefaultClientConfig() *ClientConfig {
 		MinDialTimeout:                 3 * time.Second,
 		EstablishedConnsPerTorrent:     50,
 		HalfOpenConnsPerTorrent:        25,
+		TotalHalfOpenConns:             100,
 		TorrentPeersHighWater:          500,
 		TorrentPeersLowWater:           50,
 		HandshakesTimeout:              4 * time.Second,
@@ -159,6 +177,7 @@ func NewDefaultClientConfig() *ClientConfig {
 		DownloadRateLimiter:       unlimited,
 		ConnTracker:               conntrack.NewInstance(),
 		DisableAcceptRateLimiting: true,
+		DropMutuallyCompletePeers: true,
 		HeaderObfuscationPolicy: HeaderObfuscationPolicy{
 			Preferred:        true,
 			RequirePreferred: false,
@@ -166,9 +185,12 @@ func NewDefaultClientConfig() *ClientConfig {
 		CryptoSelector: mse.DefaultCryptoSelector,
 		CryptoProvides: mse.AllSupportedCrypto,
 		//ListenPort:     42069,
+		DataDir:        "../files",
 		Logger:         log.Default,
-		DataDir:        "files",
+
 		DefaultRequestStrategy: RequestStrategyDuplicateRequestTimeout(5 * time.Second),
+
+		Extensions: defaultPeerExtensionBytes(),
 	}
 	//cc.ConnTracker.SetNoMaxEntries()
 	//cc.ConnTracker.Timeout = func(conntrack.Entry) time.Duration { return 0 }
