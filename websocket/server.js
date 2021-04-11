@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const ps = require('ps-node');
+const fs = require('fs');
 const { spawn } = require("child_process");
 const httpServer = require("http").createServer();
 const io = require('socket.io')(httpServer, {
@@ -11,44 +13,84 @@ const io = require('socket.io')(httpServer, {
 httpServer.listen(8080);
 console.log("[*] socket.io server started [http://localhost:8080]");
 
-let req_lst=[];
 io.on('connection', client => {
     console.log("[*] client connected ["+client.id+"]");
-    io.to(client.id).emit("sess_data", req_lst);
 
-    // torrent download
+    // start torrent download
     client.on("torrent_url", (data, callback) => {
         var file_size;
-        let url=data.url;
-        let logfile="../files/_log/"+Math.floor(Date.now() / 1000)+".txt";
-        req_lst.push(logfile);
-        let cur_idx=req_lst.length;
-
         // execute goLecheer_x64 file
-        const child = spawn("./goLeecher_x64", ["download", "--quiet=true", '--logfile='+logfile, url]);
-        child.stdout.on("data", data => {
-            let output=JSON.parse(`${data}`);
-            output["index"]=cur_idx;
+        const child = spawn("./goLeecher_x64", ["download", "--quiet=true", '--logfile='+data.logfile, data.url]);
+        child.stdout.on("data", goOut => {
+            let output=JSON.parse(`${goOut}`);
+            output["index"]=data.idx;
             file_size=output["size"];
-            io.to(client.id).emit("file_info", output);
+            // send the data to client
+            io.emit("file_info", output)
         });
-        child.on("exit", function(code, signal, idx) {
-            io.to(client.id).emit("dwnld_exit_code", {"code": `${code}`, "idx": cur_idx, "fsize": file_size});
+        // send the exit code and signal to client
+        child.on("exit", function(code, signal) {
+            io.emit("dwnld_exit_code", {"code": `${code}`, "idx": data.idx, "fsize": file_size, "url": data.url});
         });
 
-        callback({
-            status: "ok",
-            index: req_lst.length,
-            logfile: logfile
-        });
+        callback({status: "ok"});
     });
 
     // fetch logfile data
     client.on("get_log", (data, callback) => {
-        let file=data.file;
-        const cat=spawn("cat", [file]);
-        cat.stdout.on("data", output => {io.to(client.id).emit("log_data", `${output}`)});
+        fs.readFile(data.file, "utf8", (err, content) => {
+            let reply={};
+            if(err)
+            {
+                reply["errno"]=err["errno"];
+                reply["data"]="Failed to fetch details for "+data.name;
+            }
+            else reply["data"]=content;
+            io.to(client.id).emit("log_data", reply);
+        });
+
         callback({status: "ok"});
+    });
+
+    // prepare session data to be sent
+    client.on("get_file_info", req => {
+        let reply={"idx": req.idx, "url": req.url};
+        // process table lookup
+        ps.lookup({
+            command: 'goLeecher_x64',
+            arguments: '--logfile='+req.file,
+            }, function(err, resultList) {
+            if (err) {
+                throw new Error( err );
+            }
+            if(resultList.length){
+                // process found
+                resultList.forEach(function(process){
+                    if(process){
+                        reply["proc"]=true;
+                        io.emit("sess_data", reply);
+                    }
+                });
+            }
+            else{
+                // process not found
+                reply["proc"]=false;
+                // read file info from file
+                fs.readFile(req.file, "utf8", (err, data) => {
+                    if(err){
+                        // process must have terminated without downloading
+                        reply["fname"]="NA";
+                        reply["fsize"]="NA";
+                    }
+                    else{
+                        reply["fname"]=data.slice(data.indexOf("[*] Name") + 15, data.indexOf("[*] Size") - 1);
+                        reply["fsize"]=data.slice(data.indexOf("[*] Size") + 15, data.indexOf("[*] Files") - 1);
+                    }
+                    // send file name and size to client
+                    io.emit("sess_data", reply);
+                });
+            }
+        });
     });
 
     // client disconnection log

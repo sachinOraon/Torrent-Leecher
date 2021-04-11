@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "ps-node": "^0.1.6",
+    "socket.io": "^4.0.1"
+  }
+}

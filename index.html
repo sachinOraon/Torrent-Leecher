@@ -429,23 +429,59 @@
 
     socket.on("disconnect", () => {
       console.log("connection terminated");
-      $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
+      $("div.modal").not('#wsAlertModal').modal('hide');
+      setTimeout(function(){$('#wsAlertModal').modal({backdrop:"static", keyboard:false});}, 500);
     });
 
     socket.on("connect_error", (error) => {
       console.log("unable to connect "+error);
-      $('#wsAlertModal').modal({backdrop:"static", keyboard:false});
+      $("div.modal").not('#wsAlertModal').modal('hide');
+      setTimeout(function(){$('#wsAlertModal').modal({backdrop:"static", keyboard:false})}, 500);
     });
 
-    // put session data into download list modal
-    socket.on("sess_data", req_lst => {
-      if(req_lst.length){
-        for(let i=0; i<req_lst.length; i++)
+    // parse cookie and add items in download list modal
+    let dc=decodeURIComponent(document.cookie);
+    let ca=dc.split(";");
+    if(ca.length > 0)
+    {
+      for(let i=0; i<ca.length; i++)
+      {
+        let tmp=ca[i].trim();
+        if(tmp.indexOf("idx-") == 0)
         {
-          $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+req_lst[i]+'" data-index="'+(i+1)+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+          let index=tmp.split("=")[0].trim().slice(4);
+          let file=tmp.split('logfile:')[1].split('torlink:')[0].trim();
+          let url=tmp.split('torlink:')[1].trim();
+          $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+file+'" data-index="'+index+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+          socket.emit("get_file_info", {"file": file, "idx": index, "url": url});
         }
       }
-      else $('#dlModal .modal-body').append('<div class="alert alert-info font-weight-bold text-monospace no-url-sub">No url submitted</div>');
+    }
+    if(ca.length == 0 || $("#dlModal .modal-body div.alert > a").length == 0)
+      $('#dlModal .modal-body').append('<div class="alert alert-info font-weight-bold text-monospace no-url-sub">No url submitted</div>');
+
+    // put session data into dlmodal
+    socket.on("sess_data", data => {
+      var node='#dlModal .modal-body div.alert > a[data-index='+data.idx+']';
+      if(!data.proc && $(node).length)
+      {
+        if(data.fname == "NA")
+        {
+          $(node).text("Failed to download");
+          $(node).parent().removeClass('alert-primary').addClass('alert-danger');
+          $(node).parent().find('.fpercent').remove();
+          $(node).parent().append('<div class="collapse text-body text-monospace">URL: '+data.url+'</div>');
+          $(node).on('click', function(){$(this).parent().find('div.collapse').collapse('toggle')});
+        }
+        else
+        {
+          $(node).text(data.fname);
+          $(node).parent().removeClass('alert-primary').addClass('alert-success');
+          $(node).parent().find('.fpercent').html('<span class="badge badge-pill badge-primary">100%</span>');
+          $(node).parent().find('.fsize').html('<span class="badge badge-pill badge-secondary">'+data.fsize+'</span>');
+        }
+        $(node).parent().find('.fstop').remove();
+      }
     });
 
     // Display download list modal
@@ -470,15 +506,23 @@
         }
         else
         {
+          // set cookie containing index and logfile (valid for 24hr)
+          let date = new Date();
+          date.setTime(date.getTime() + (24*60*60*1000));
+          let expires = "expires="+ date.toUTCString();
+          let logfile="../files/_log/"+Math.floor(Date.now() / 1000)+".txt";
+          let cur_idx=$("#dlModal .modal-body div.alert > a").length + 1;
+          document.cookie = "idx-" + cur_idx + "=logfile:" + logfile + " torlink:" + url + ";" + expires + ";path=/; SameSite=None; Secure";
+
           // send the request to server
-          let payload={"url":$('input[name="torrent_url"]').val().trim()};
+          let payload={"url": url, "idx": cur_idx, "logfile": logfile};
           socket.emit("torrent_url", payload, (response) => {
             if(response.status == "ok")
             {
               document.getElementById('submitUrl').reset();
               if($('.no-url-sub').length)
                 $('.no-url-sub').remove();
-              $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+response.logfile+'" data-index="'+response.index+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+              $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+logfile+'" data-index="'+cur_idx+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
               $("#dlModal").modal('show');
             }
           });
@@ -488,55 +532,65 @@
     // Display downloading file info in download list modal
     socket.on("file_info", output => {
       var node='#dlModal .modal-body div.alert > a[data-index='+output.index+']';
-      $(node).text(output.filename);
-      $(node).parent().removeClass('alert-primary').addClass('alert-warning');
-      $(node).parent().find('.fpercent').html('<span class="badge badge-pill badge-primary">'+output.percent+'</span>');
-      $(node).parent().find('.fsize').html('<span class="badge badge-pill badge-secondary">'+output.downloaded+'/'+output.size+'</span>');
-      $(node).parent().find('.fspeed').html('<span class="badge badge-pill badge-success">'+output.speed+'</span>');
+      if($(node).length)
+      {
+        $(node).text(output.filename);
+        $(node).parent().removeClass('alert-primary').addClass('alert-warning');
+        $(node).parent().find('.fpercent').html('<span class="badge badge-pill badge-primary">'+output.percent+'</span>');
+        $(node).parent().find('.fsize').html('<span class="badge badge-pill badge-secondary">'+output.downloaded+'/'+output.size+'</span>');
+        $(node).parent().find('.fspeed').html('<span class="badge badge-pill badge-success">'+output.speed+'</span>');
+      }
     });
 
     // Do some ui changes when process completes
     socket.on("dwnld_exit_code", data => {
       var node='#dlModal .modal-body div.alert > a[data-index='+data.idx+']';
-      if(data.code == "0"){
-        $(node).parent().removeClass('alert-warning').addClass('alert-success');
-        $(node).parent().find('span.fpercent .badge').text('100%');
-        $(node).parent().find('span.fsize .badge').text(data.fsize);
-        $(node).parent().find('span.fspeed').fadeOut('slow');
-        $(node).parent().find('span.fstop').fadeOut('slow');
-        // add click event to view the logfile
-        $(node).on('click', function(){
-          let logfile=$(this).data('logfile');
-          // send the request to server
-          socket.emit("get_log", {file: logfile}, (response) => {
-            if(response.status == "ok")
-            {
-              $('#dlModal').modal('hide');
-              setTimeout(function(){$('#logModal').modal('show');}, 500);
-            }
+      if($(node).length){
+        if(data.code == "0"){
+          $(node).parent().removeClass('alert-warning').addClass('alert-success');
+          $(node).parent().find('span.fpercent .badge').text('100%');
+          $(node).parent().find('span.fsize .badge').text(data.fsize);
+          $(node).parent().find('span.fspeed').fadeOut('slow');
+          $(node).parent().find('span.fstop').fadeOut('slow');
+          // add click event to view the logfile
+          $(node).on('click', function(){
+            let logfile=$(this).data('logfile');
+            let filename=$(this).text();
+            // send the request to server
+            socket.emit("get_log", {"file": logfile, "name": filename}, (response) => {
+              if(response.status == "ok")
+              {
+                $('#dlModal').modal('hide');
+                setTimeout(function(){$('#logModal').modal('show');}, 500);
+              }
+            });
           });
-        });
-      }
-      else{
-        // display err msg
-        let err_msg;
-        switch(data.code){
-          case "2" :err_msg='Error adding magnet (invalid magnet link)'; break;
-          case "3" :err_msg='Error downloading torrent file (invalid .torrent file link)'; break;
-          case "4" :err_msg='Error loading torrent file (unable to get .torrent file metainfo)'; break;
-          case "5" :err_msg='Error adding torrent (unable to initiate download process)'; break;
-          default  :err_msg='Failed to download (invalid input given)';
         }
-        $(node).text(err_msg);
-        $(node).parent().removeClass('alert-primary').addClass('alert-danger');
-        $(node).parent().find('span.fpercent').fadeOut('slow');
-        $(node).parent().find('span.fstop').fadeOut('slow');
+        else{
+          // display err msg
+          let err_msg;
+          switch(data.code){
+            case "2" :err_msg='Error adding magnet (invalid magnet link)'; break;
+            case "3" :err_msg='Error downloading torrent file (invalid .torrent file link)'; break;
+            case "4" :err_msg='Error loading torrent file (unable to get .torrent file metainfo)'; break;
+            case "5" :err_msg='Error adding torrent (unable to initiate download process)'; break;
+            default  :err_msg='Failed to download (invalid input given)';
+          }
+          $(node).text(err_msg);
+          $(node).parent().removeClass('alert-primary').addClass('alert-danger');
+          $(node).parent().find('span.fpercent').fadeOut('slow');
+          $(node).parent().find('span.fstop').fadeOut('slow');
+          $(node).parent().append('<div class="collapse text-body text-monospace">URL: '+data.url+'</div>');
+          $(node).on('click', function(){$(this).parent().find('div.collapse').collapse('toggle')});
+        }
       }
     });
 
     // put the log data in logModal
-    socket.on("log_data", data => {
-      $('#logModal .modal-body').html('<pre style="overflow: hidden; text-overflow: ellipsis;">'+data+'</pre>');
+    socket.on("log_data", reply => {
+      if(reply.errno)
+        $('#logModal .modal-body').html('<div class="alert alert-danger alert-link text-monospace">'+reply.data+"</div>");
+      else $('#logModal .modal-body').html('<pre style="overflow: hidden; text-overflow: ellipsis;">'+reply.data+'</pre>');
     });
 
     // put spinner after closing logModal
