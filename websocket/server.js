@@ -56,10 +56,7 @@ io.on('connection', client => {
     client.on("get_file_info", req => {
         let reply={"idx": req.idx, "url": req.url};
         // process table lookup
-        ps.lookup({
-            command: 'goLeecher_x64',
-            arguments: '--logfile='+req.file,
-            }, function(err, resultList) {
+        ps.lookup({command: 'goLeecher_x64', arguments: '--logfile='+req.file}, function(err, resultList) {
             if (err) {
                 throw new Error( err );
             }
@@ -89,6 +86,47 @@ io.on('connection', client => {
                     // send file name and size to client
                     io.emit("sess_data", reply);
                 });
+            }
+        });
+    });
+
+    // stopping download
+    client.on('stop_dwnld', req => {
+        // find the process id
+        ps.lookup({command: 'goLeecher_x64', arguments: '--logfile='+req.logfile}, function(err, resultList){
+            if(err){
+                io.emit('stop_dwnld_msg', {msg: err.code+': ps.lookup() error!', idx: req.idx});
+            }
+            else{
+                if(resultList.length){
+                    // process found
+                    resultList.forEach(function(process){
+                        if(process){
+                            // kill the process
+                            ps.kill(process.pid, 'SIGKILL', function(err){
+                                if(err){
+                                    io.emit('stop_dwnld_msg', {msg: err.code+' Process found but unable to kill', idx: req.idx});
+                                }
+                                else{
+                                    // also remove the partially downloaded file if exists
+                                    if(fs.existsSync('../files/'+req.fname)){
+                                        fs.rm("../files/"+req.fname, { recursive: true }, (err) => {
+                                            if(err){
+                                                msg=err.code+' Unable to delete file';
+                                            }
+                                            else{
+                                                msg='ok';
+                                            }
+                                            io.emit('stop_dwnld_msg', {msg: msg, idx: req.idx});
+                                        });
+                                    }
+                                    else io.emit('stop_dwnld_msg', {msg: 'File does not exists', idx: req.idx});
+                                }
+                            });
+                        }
+                    });
+                }
+                else io.emit('stop_dwnld_msg', {msg: msg, idx: req.idx});
             }
         });
     });

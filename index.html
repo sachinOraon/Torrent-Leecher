@@ -34,6 +34,7 @@
 </head>
 
 <body>
+
 <!-- websocket connection alert modal -->
 <div class="modal fade" id="wsAlertModal">
   <div class="modal-dialog modal-sm">
@@ -47,52 +48,6 @@
       <!-- Modal body -->
       <div class="modal-body font-weight-bold text-monospace">
         Failed to establish websocket connection to the server. Kindly try again later.
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- process info modal -->
-<div class="modal fade" id="processLst">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Process Info</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body processinfo"><div class="spinner-grow text-info"></div></div>
-
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- storage info modal -->
-<div class="modal fade" id="storageInfo">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Storage Info</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body storage-info"><div class="spinner-grow text-info"></div></div>
-
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
       </div>
 
     </div>
@@ -122,7 +77,7 @@
   </div>
 </div>
 
-<!-- The Modal -->
+<!-- file info modal -->
 <div class="modal fade" id="logModal">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -139,159 +94,6 @@
       <!-- Modal footer -->
       <div class="modal-footer">
         <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- The Modal -->
-<div class="modal fade" id="PurgeModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Purge Files</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body">
-       <div class="alert alert-danger">
-        Purging file will remove all the downloaded files and logs from the server. Use this to free up space in one go.
-       </div>
-       <form id='purgeForm'>
-        <div class="form-group">
-         <label for="pwd">Password:</label>
-         <input type="password" class="form-control" placeholder="Enter password" id="pwd" name='purge' required>
-        </div>
-        <button type="button" class="btn btn-primary">Submit</button>
-       </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- The Modal -->
-<div class="modal fade" id="successModal">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Information</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body"><span class="text-success text-monospace font-weight-bold">Files Deleted Successfully</span></div>
-
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- The Modal -->
-<div class="modal fade" id="freeUpForm">
-  <div class="modal-dialog">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Delete Files</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body">
-       <div class="alert alert-info">
-        The next page will bring up a list of user files stored on the server and provides an option to select and delete unused files.
-       </div>
-       <form id="delFileForm">
-        <div class="form-group">
-         <label for="pwd">Password:</label>
-         <input type="password" class="form-control" placeholder="Enter password" id="pwdDf" name='listFiles' required>
-        </div>
-        <button type="button" class="btn btn-primary">Submit</button>
-       </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- The Modal -->
-<div class="modal fade" id="showFiles">
-  <div class="modal-dialog modal-dialog-scrollable">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Files Available</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body filelist"></div>
-
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-danger d-none delFileBtn">Delete</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- The Modal -->
-<div class="modal fade" id="stopModal">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Alert</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body"><span class="text-danger text-monospace font-weight-bold">Do you want to stop the download?</span></div>
-
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary btn-sm" id="stopBtn">Yes</button>
-        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- The Modal -->
-<div class="modal fade" id="pkillmodal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Process Kill</h4>
-        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body">
-        <div id="pkillform">
-            <div class="form-group">
-                <label for="pwd">Password:</label>
-                <input type="password" class="form-control" id="pkillpass" placeholder="Enter password">
-            </div>
-            <button type="button" class="btn btn-primary" id="pkillpassBtn">Submit&nbsp;<span class="spinner-grow spinner-grow-sm d-none"></span></button>
-        </div>
-        <div id="pkillbody" class='d-none'></div>
       </div>
 
     </div>
@@ -452,7 +254,8 @@
           let index=tmp.split("=")[0].trim().slice(4);
           let file=tmp.split('logfile:')[1].split('torlink:')[0].trim();
           let url=tmp.split('torlink:')[1].trim();
-          $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+file+'" data-index="'+index+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+          $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace text-break fname" href="#" data-logfile="'+file+'" data-index="'+index+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;" id="fstop-'+index+'">STOP</span></div>');
+          addStopPopover(index, file);
           socket.emit("get_file_info", {"file": file, "idx": index, "url": url});
         }
       }
@@ -470,7 +273,7 @@
           $(node).text("Failed to download");
           $(node).parent().removeClass('alert-primary').addClass('alert-danger');
           $(node).parent().find('.fpercent').remove();
-          $(node).parent().append('<div class="collapse text-body text-monospace">URL: '+data.url+'</div>');
+          $(node).parent().append('<div class="collapse text-body text-monospace text-break">URL: '+data.url+'</div>');
           $(node).on('click', function(){$(this).parent().find('div.collapse').collapse('toggle')});
         }
         else
@@ -522,12 +325,56 @@
               document.getElementById('submitUrl').reset();
               if($('.no-url-sub').length)
                 $('.no-url-sub').remove();
-              $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace fname" href="#" data-logfile="'+logfile+'" data-index="'+cur_idx+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;">STOP</span></div>');
+              // add item in the download list modal
+              $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace text-break fname" href="#" data-logfile="'+logfile+'" data-index="'+cur_idx+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;" id="fstop-'+cur_idx+'">STOP</span></div>');
+              // add popover to the stop button
+              addStopPopover(cur_idx, logfile);
+              /*$('#fstop-'+cur_idx).popover({
+                title    : '<span class="font-weight-bold text-monospace text-danger">Alert!</span>',
+                content  : '<span class="font-weight-bold text-monospace">Do you want to stop it?</span><br><a href="#" class="btn btn-sm btn-danger" role="button" id="ystpbtn-'+cur_idx+'">YES</a>&nbsp;<a href="#" class="btn btn-sm btn-success" role="button" id="nstpbtn-'+cur_idx+'">NO</a>',
+                html     : true,
+                placement: 'right',
+                trigger  : 'click'
+              });
+              // bind yes/no events to the stop button popover
+              $('#fstop-'+cur_idx).on('shown.bs.popover', function(){
+                // add click event to the yes button
+                $('#ystpbtn-'+cur_idx).on('click', function(){
+                  socket.emit("stop_dwnld", {'idx': cur_idx, 'logfile': logfile, 'fname': $('#fstop-'+cur_idx).prevAll('a.fname').text()});
+                });
+                // add click event to the no button
+                $('#nstpbtn-'+cur_idx).on('click', function(){
+                  $('#fstop-'+cur_idx).popover('hide');
+                });
+              });*/
+              // open the download list modal
               $("#dlModal").modal('show');
             }
           });
         }
     });
+
+    // add popover to the stop button
+    function addStopPopover(cur_idx, logfile){
+      $('#fstop-'+cur_idx).popover({
+        title    : '<span class="font-weight-bold text-monospace text-danger">Alert!</span>',
+        content  : '<span class="font-weight-bold text-monospace">Do you want to stop it?</span><br><a href="#" class="btn btn-sm btn-danger" role="button" id="ystpbtn-'+cur_idx+'">YES</a>&nbsp;<a href="#" class="btn btn-sm btn-success" role="button" id="nstpbtn-'+cur_idx+'">NO</a>',
+        html     : true,
+        placement: 'right',
+        trigger  : 'click'
+      });
+      // bind yes/no events to the stop button popover
+      $('#fstop-'+cur_idx).on('shown.bs.popover', function(){
+        // add click event to the yes button
+        $('#ystpbtn-'+cur_idx).on('click', function(){
+          socket.emit("stop_dwnld", {'idx': cur_idx, 'logfile': logfile, 'fname': $('#fstop-'+cur_idx).prevAll('a.fname').text()});
+        });
+        // add click event to the no button
+        $('#nstpbtn-'+cur_idx).on('click', function(){
+          $('#fstop-'+cur_idx).popover('hide');
+        });
+      });
+    }
 
     // Display downloading file info in download list modal
     socket.on("file_info", output => {
@@ -546,11 +393,11 @@
     socket.on("dwnld_exit_code", data => {
       var node='#dlModal .modal-body div.alert > a[data-index='+data.idx+']';
       if($(node).length){
+        $(node).parent().find('span.fspeed').fadeOut('slow');
         if(data.code == "0"){
           $(node).parent().removeClass('alert-warning').addClass('alert-success');
           $(node).parent().find('span.fpercent .badge').text('100%');
           $(node).parent().find('span.fsize .badge').text(data.fsize);
-          $(node).parent().find('span.fspeed').fadeOut('slow');
           $(node).parent().find('span.fstop').fadeOut('slow');
           // add click event to view the logfile
           $(node).on('click', function(){
@@ -574,14 +421,47 @@
             case "3" :err_msg='Error downloading torrent file (invalid .torrent file link)'; break;
             case "4" :err_msg='Error loading torrent file (unable to get .torrent file metainfo)'; break;
             case "5" :err_msg='Error adding torrent (unable to initiate download process)'; break;
-            default  :err_msg='Failed to download (invalid input given)';
+            default  :err_msg=$(node).text();
           }
           $(node).text(err_msg);
           $(node).parent().removeClass('alert-primary').addClass('alert-danger');
           $(node).parent().find('span.fpercent').fadeOut('slow');
-          $(node).parent().find('span.fstop').fadeOut('slow');
-          $(node).parent().append('<div class="collapse text-body text-monospace">URL: '+data.url+'</div>');
+          $(node).parent().find('span.fsize').fadeOut('slow');
+          $(node).parent().find('span.fstop').text('STOPPED');
+          $(node).parent().append('<div class="collapse text-body text-monospace text-break">URL: '+data.url+'</div>');
           $(node).on('click', function(){$(this).parent().find('div.collapse').collapse('toggle')});
+        }
+      }
+    });
+
+    // stop_dwnld_msg listner
+    socket.on('stop_dwnld_msg', reply => {
+      let node=$('#fstop-'+reply.idx);
+      if(node.length)
+      {
+        // create alert tooltip
+        let ystpbtn=$('#ystpbtn-'+reply.idx);
+        ystpbtn.tooltip({
+          title    : reply.msg,
+          placement: "top",
+          trigger  : "click"
+        });
+        if(reply.msg == 'ok')
+        {
+          // destroy the stop button popover after process is killed
+          node.popover('dispose');
+        }
+        else if(reply.msg.indexOf('delete') >= 0 || reply.msg.indexOf('exists') >= 0){
+          ystpbtn.tooltip('show');
+          setTimeout(() => {
+            ystpbtn.tooltip('dispose');
+            node.popover('dispose');
+          }, 2000);
+        }
+        else
+        {
+          ystpbtn.tooltip('show');
+          setTimeout(() => { ystpbtn.tooltip('dispose'); }, 2000);
         }
       }
     });
@@ -597,6 +477,7 @@
     $('#logModal').on('hidden.bs.modal', function(){
       $('#logModal .modal-body').html('<div class="spinner-grow text-success"></div>');
     });
+
   });
 
  </script>
