@@ -61,7 +61,7 @@
 
       <!-- Modal Header -->
       <div class="modal-header">
-        <h4 class="modal-title">Download List</h4>
+        <h4 class="modal-title"><i class="fas fa-tasks"></i>&nbsp;Download List</h4>
         <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
       </div>
 
@@ -126,16 +126,13 @@
             <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link dlistbtn" href="#"><i class="fas fa-list-ul"></i> Tasks</a>
+            <a class="nav-link dlistbtn" href="#"><i class="fas fa-tasks"></i> Downloads</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link storage_info" href="#"><i class="fas fa-hdd"></i> Storage Info</a>
+            <a class="nav-link" href="#" id="storage_info_btn"><i class="fas fa-hdd"></i> Storage Info</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-toggle="modal" data-target="#PurgeModal" data-backdrop="static"><i class="fas fa-skull-crossbones"></i> Purge Files</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#" data-toggle="modal" data-target="#freeUpForm" data-backdrop="static"><i class="fas fa-trash-alt"></i> Delete Files</a>
@@ -329,24 +326,6 @@
               $('#dlModal .modal-body').prepend('<div class="alert alert-primary" role="alert"><a class="alert-link text-monospace text-break fname" href="#" data-logfile="'+logfile+'" data-index="'+cur_idx+'">Getting file info</a>&nbsp;&nbsp;<span class="fpercent" style="cursor: default;"><div class="spinner-grow spinner-grow-sm text-success"></div></span>&nbsp;<span class="fsize" style="cursor: default;"></span>&nbsp;<span class="fspeed" style="cursor: default;"></span>&nbsp;<span class="badge badge-pill badge-danger fstop" style="cursor: pointer;" id="fstop-'+cur_idx+'">STOP</span></div>');
               // add popover to the stop button
               addStopPopover(cur_idx, logfile);
-              /*$('#fstop-'+cur_idx).popover({
-                title    : '<span class="font-weight-bold text-monospace text-danger">Alert!</span>',
-                content  : '<span class="font-weight-bold text-monospace">Do you want to stop it?</span><br><a href="#" class="btn btn-sm btn-danger" role="button" id="ystpbtn-'+cur_idx+'">YES</a>&nbsp;<a href="#" class="btn btn-sm btn-success" role="button" id="nstpbtn-'+cur_idx+'">NO</a>',
-                html     : true,
-                placement: 'right',
-                trigger  : 'click'
-              });
-              // bind yes/no events to the stop button popover
-              $('#fstop-'+cur_idx).on('shown.bs.popover', function(){
-                // add click event to the yes button
-                $('#ystpbtn-'+cur_idx).on('click', function(){
-                  socket.emit("stop_dwnld", {'idx': cur_idx, 'logfile': logfile, 'fname': $('#fstop-'+cur_idx).prevAll('a.fname').text()});
-                });
-                // add click event to the no button
-                $('#nstpbtn-'+cur_idx).on('click', function(){
-                  $('#fstop-'+cur_idx).popover('hide');
-                });
-              });*/
               // open the download list modal
               $("#dlModal").modal('show');
             }
@@ -393,6 +372,7 @@
     socket.on("dwnld_exit_code", data => {
       var node='#dlModal .modal-body div.alert > a[data-index='+data.idx+']';
       if($(node).length){
+        $('#fstop-'+data.idx).off('click');
         $(node).parent().find('span.fspeed').fadeOut('slow');
         if(data.code == "0"){
           $(node).parent().removeClass('alert-warning').addClass('alert-success');
@@ -415,13 +395,13 @@
         }
         else{
           // display err msg
-          let err_msg;
+          let err_msg=$(node).text();
           switch(data.code){
+            case "1" :err_msg='Failed to download (invalid input given)'; break;
             case "2" :err_msg='Error adding magnet (invalid magnet link)'; break;
             case "3" :err_msg='Error downloading torrent file (invalid .torrent file link)'; break;
             case "4" :err_msg='Error loading torrent file (unable to get .torrent file metainfo)'; break;
             case "5" :err_msg='Error adding torrent (unable to initiate download process)'; break;
-            default  :err_msg=$(node).text();
           }
           $(node).text(err_msg);
           $(node).parent().removeClass('alert-primary').addClass('alert-danger');
@@ -440,8 +420,8 @@
       if(node.length)
       {
         // create alert tooltip
-        let ystpbtn=$('#ystpbtn-'+reply.idx);
-        ystpbtn.tooltip({
+        let item=$('#dlModal .modal-body div.alert > a[data-index='+reply.idx+']');
+        item.tooltip({
           title    : reply.msg,
           placement: "top",
           trigger  : "click"
@@ -450,18 +430,17 @@
         {
           // destroy the stop button popover after process is killed
           node.popover('dispose');
+          item.tooltip('dispose');
         }
         else if(reply.msg.indexOf('delete') >= 0 || reply.msg.indexOf('exists') >= 0){
-          ystpbtn.tooltip('show');
-          setTimeout(() => {
-            ystpbtn.tooltip('dispose');
-            node.popover('dispose');
-          }, 2000);
+          node.popover('dispose');
+          item.tooltip('show');
+          setTimeout(() => { item.tooltip('dispose') }, 2000);
         }
         else
         {
-          ystpbtn.tooltip('show');
-          setTimeout(() => { ystpbtn.tooltip('dispose'); }, 2000);
+          item.tooltip('show');
+          setTimeout(() => { item.tooltip('dispose') }, 2000);
         }
       }
     });
@@ -476,6 +455,26 @@
     // put spinner after closing logModal
     $('#logModal').on('hidden.bs.modal', function(){
       $('#logModal .modal-body').html('<div class="spinner-grow text-success"></div>');
+    });
+
+    // storage info function
+    $('#storage_info_btn').popover({
+      title    : '<span class="font-weight-bold text-monospace"><i class="fas fa-hdd"></i>&nbsp;Storage Info</span>',
+      content  : '<pre id="storage_info_body" class="h6 font-weight-bold text-monospace"><div class="spinner-grow text-success"></div></pre>',
+      html     : true,
+      trigger  : 'focus',
+      placement: 'top'
+    });
+    $('#storage_info_btn').on('click', function(){
+      socket.emit('get_storage_info');
+    });
+    socket.on('storage_info_msg', resp => {
+      $('#storage_info_body div.spinner').remove();
+      $('#storage_info_body').text(resp);
+    });
+    $('#storage_info_btn').on('hidden.bs.popover', function(){
+      $('#storage_info_body').text('');
+      $('#storage_info_body').html('<div class="spinner-grow text-success"></div>');
     });
 
   });

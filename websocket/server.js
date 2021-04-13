@@ -30,7 +30,7 @@ io.on('connection', client => {
         });
         // send the exit code and signal to client
         child.on("exit", function(code, signal) {
-            io.emit("dwnld_exit_code", {"code": `${code}`, "idx": data.idx, "fsize": file_size, "url": data.url});
+            io.emit("dwnld_exit_code", {"signal": `${signal}`, "code": `${code}`, "idx": data.idx, "fsize": file_size, "url": data.url});
         });
 
         callback({status: "ok"});
@@ -128,6 +128,17 @@ io.on('connection', client => {
                 }
                 else io.emit('stop_dwnld_msg', {msg: msg, idx: req.idx});
             }
+        });
+    });
+
+    // fetch storage info
+    client.on('get_storage_info', function(){
+        const df=spawn("df", ["-H", "--sync", "--output=size,used,avail,pcent", "--type=ext41"]);
+        df.stdout.on('data', dfout => {
+            io.to(client.id).emit("storage_info_msg", `${dfout}`);
+        });
+        df.stderr.on('data', err => {
+            io.to(client.id).emit("storage_info_msg", `ERR: ${err}`);
         });
     });
 
