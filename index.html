@@ -123,6 +123,29 @@
   </div>
 </div>
 
+<!-- file list modal -->
+<div class="modal fade" id="fileListModal">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title"><i class="far fa-folder-open"></i>&nbsp;Files List</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body"><div class="spinner-grow text-success"></div></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="delFileBtn" disabled>Delete</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
   <!-- Navbar -->
   <nav class="navbar fixed-top navbar-expand-lg navbar-dark scrolling-navbar">
     <div class="container">
@@ -158,7 +181,7 @@
             <a class="nav-link" href="files" target="_blank"><i class="fas fa-film"></i> File Browser</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#" data-toggle="modal" data-target="#freeUpForm" data-backdrop="static"><i class="fas fa-trash-alt"></i> Delete Files</a>
+            <a class="nav-link" href="#" data-toggle="modal" data-target="#fileListModal" data-backdrop="static"><i class="fas fa-trash-alt"></i> Delete Files</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="https://unblocked-pw.github.io/" target="_blank"><i class="far fa-grin-stars"></i> Torrent Sites</a>
@@ -301,6 +324,18 @@
           $(node).parent().removeClass('alert-primary').addClass('alert-success');
           $(node).parent().find('.fpercent').html('<span class="badge badge-pill badge-primary">100%</span>');
           $(node).parent().find('.fsize').html('<span class="badge badge-pill badge-secondary">'+data.fsize+'</span>');
+          $(node).on('click', function(){
+            let logfile=$(this).data('logfile');
+            let filename=$(this).text();
+            // send the request to server
+            socket.emit("get_log", {"file": logfile, "name": filename}, (response) => {
+              if(response.status == "ok")
+              {
+                $('#dlModal').modal('hide');
+                setTimeout(function(){$('#logModal').modal('show');}, 500);
+              }
+            });
+          });
         }
         $(node).parent().find('.fstop').remove();
       }
@@ -517,7 +552,66 @@
     $('#procLstModal').on('hidden.bs.modal', function(){
       $('#procLstModal .modal-body').html('<div class="spinner-grow text-success"></div>');
       socket.emit('stop_procmon');
-    })
+    });
+
+    // delete file function
+    $('#fileListModal').on('shown.bs.modal', function(){ socket.emit('get_file_list') });
+    socket.on('files_list', reply => {
+      if(reply.err == null){
+        if(reply.data.length){
+          $('#fileListModal .modal-body').html('');
+          $('#delFileBtn').prop('disabled', false);
+          for(let i=0; i<reply.data.length; i++){
+            $('#fileListModal .modal-body').append('<div class="custom-control custom-checkbox">'+'<input type="checkbox" class="custom-control-input" value="'+reply.data[i]+'" id="file-'+i+'"><label class="custom-control-label text-monospace" for="file-'+i+'">'+reply.data[i]+'</label></div>');
+          }
+        }
+        else{
+          $('#delFileBtn').prop('disabled', true);
+          $('#fileListModal .modal-body').html('<div class="alert alert-warning font-weight-bold text-monospace">No files available</div>');
+        }
+      }
+      else{
+        $('#delFileBtn').prop('disabled', true);
+        $('#fileListModal .modal-body').html('<div class="alert alert-danger font-weight-bold text-monospace">'+reply.err+'</div>');
+      }
+    });
+    $('#fileListModal').on('hidden.bs.modal', function(){
+      $('#fileListModal .modal-body').html('<div class="spinner-grow text-success"></div>');
+      $('#delFileBtn').prop('disabled', true);
+    });
+    $('#delFileBtn').on('click', function(){
+      let files=[];
+      $('#fileListModal .modal-body input').each(function(){
+        if($(this).prop('checked')){
+          files.push($(this).val());
+        }
+      });
+      if(files.length){
+        socket.emit('delete_file_list', files);
+      }
+      else{
+        $('#delFileBtn').tooltip({
+          trigger: "click",
+          html: true,
+          title: '<span class="font-weight-bold">No file selected</span>',
+          placement: "left"
+        });
+        $('#delFileBtn').tooltip('show');
+        setTimeout(() => { $('#delFileBtn').tooltip('dispose') }, 2000);
+      }
+    });
+    socket.on('delete_file_msg', msg => {
+      $('#delFileBtn').tooltip({
+        trigger: "manual",
+        title: msg,
+        placement: "left"
+      });
+      $('#delFileBtn').tooltip('show');
+      setTimeout(() => {
+        $('#delFileBtn').tooltip('dispose');
+        socket.emit('get_file_list');
+      }, 2000);
+    });
 
   });
 

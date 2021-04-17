@@ -165,6 +165,38 @@ io.on('connection', client => {
     client.on('stop_procmon', function(){ clearInterval(proc_monitor) });
     client.on('stop_pid', pid => { process.kill(pid, 'SIGKILL') });
 
+    // send files list to the client
+    client.on('get_file_list', function(){
+        fs.readdir('../files', function(err, files){
+            if(err){
+                io.to(client.id).emit('files_list', {err: `${err}`, data: null});
+            }
+            else{
+                files.splice(files.indexOf('.torrent.bolt.db'), 1);
+                files.splice(files.indexOf('_h5ai'), 1);
+                files.splice(files.indexOf('_log'), 1);
+                io.to(client.id).emit('files_list', {err: null, data: files});
+            }
+        });
+    });
+
+    // delete files
+    client.on('delete_file_list', files => {
+        let failCnt=0;
+        let msg;
+        for(let i=0; i<files.length; i++)
+        {
+            fs.rm("../files/"+files[i], { recursive: true }, (err) => {
+                if(err)
+                    failCnt++;
+            });
+        }
+        if(failCnt)
+            msg='Unable to delete some files';
+        else msg='Files deleted successfully';
+        io.to(client.id).emit('delete_file_msg', msg);
+    });
+
     // client disconnection log
     client.on('disconnect', (reason) => {
         console.log("[*] "+reason+" ["+client.id+"]");
