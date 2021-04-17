@@ -100,6 +100,29 @@
   </div>
 </div>
 
+<!-- process list modal -->
+<div class="modal fade" id="procLstModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title"><i class="fas fa-server"></i>&nbsp;Running Process List</h4>
+        <button type="button" class="close text-danger font-weight-bold" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body"><div class="spinner-grow text-success"></div></div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
   <!-- Navbar -->
   <nav class="navbar fixed-top navbar-expand-lg navbar-dark scrolling-navbar">
     <div class="container">
@@ -123,10 +146,10 @@
             <a class="nav-link" href="index.html"><i class="fas fa-redo-alt"></i> Reload</a><span class="sr-only">(current)</span>
           </li>
           <li class="nav-item">
-            <a class="nav-link pbtn" href="#"><i class="fas fa-server"></i> Process Info</a>
+            <a class="nav-link" href="#" data-toggle="modal" data-target="#procLstModal"><i class="fas fa-server"></i> Process Info</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link dlistbtn" href="#"><i class="fas fa-tasks"></i> Downloads</a>
+            <a class="nav-link" href="#" data-toggle="modal" data-target="#dlModal"><i class="fas fa-tasks"></i> Downloads</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#" id="storage_info_btn"><i class="fas fa-hdd"></i> Storage Info</a>
@@ -167,9 +190,8 @@
                   <input type="text" class="form-control" name='torrent_url' aria-label="torrent url" aria-describedby="inputGroup-sizing-default" placeholder="Paste .torrent file url or magnet link" required>
                 </div>
                </div>
-              <button type="button" class="btn btn-outline-white btn-lg submitBtn">Download <i class="fas fa-arrow-circle-down fa-lg"></i></button>
+              <button type="button" class="btn btn-outline-white btn-lg" id="submitBtn">Download <i class="fas fa-arrow-circle-down fa-lg"></i></button>
             </form>
-
       </div>
       <!--/.Content -->
 
@@ -284,13 +306,8 @@
       }
     });
 
-    // Display download list modal
-    $('.dlistbtn').on('click', function(){
-        $('#dlModal').modal('show');
-    });
-
     // Download button click event
-    $('.submitBtn').on('click', function(){
+    $('#submitBtn').on('click', function(){
         var url=$('input[name="torrent_url"]').val().trim();
         // Avoid taking empty data
         if(url === ""){
@@ -476,6 +493,31 @@
       $('#storage_info_body').text('');
       $('#storage_info_body').html('<div class="spinner-grow text-success"></div>');
     });
+
+    // process list info modal
+    $('#procLstModal').on('shown.bs.modal', function(){
+      socket.emit('start_procmon');
+    });
+    socket.on('process_info', data => {
+      if(data.total == "0"){
+        $('#procLstModal .modal-body').html('<div class="alert alert-success font-weight-bold text-monospace">No running process found</div>');
+      }
+      else{
+        $('#procLstModal .modal-body').html('');
+        for(let i=0; i<data['pid'].length; i++){
+          $('#procLstModal .modal-body').append('<div class="alert alert-primary text-monospace font-weight-bold"><i class="fas fa-code-branch"></i>&nbsp;PID:&nbsp;'+data['pid'][i]+'&nbsp;<span class="badge badge-pill badge-danger" style="cursor: pointer;" id="'+data['pid'][i]+'">STOP</span></div>');
+          $('#'+data['pid'][i]).on('click', function(){
+            $(this).parent().removeClass('alert-primary').addClass('alert-warning');
+            $(this).fadeOut('slow');
+            socket.emit('stop_pid', data['pid'][i]);
+          });
+        }
+      }
+    });
+    $('#procLstModal').on('hidden.bs.modal', function(){
+      $('#procLstModal .modal-body').html('<div class="spinner-grow text-success"></div>');
+      socket.emit('stop_procmon');
+    })
 
   });
 

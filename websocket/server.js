@@ -6,7 +6,7 @@ const { spawn } = require("child_process");
 const httpServer = require("http").createServer();
 const io = require('socket.io')(httpServer, {
     cors: {
-        origin: "http://localhost",
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -57,8 +57,8 @@ io.on('connection', client => {
         let reply={"idx": req.idx, "url": req.url};
         // process table lookup
         ps.lookup({command: 'goLeecher_x64', arguments: '--logfile='+req.file}, function(err, resultList) {
-            if (err) {
-                throw new Error( err );
+            if(err){
+                throw new Error(err);
             }
             if(resultList.length){
                 // process found
@@ -126,14 +126,14 @@ io.on('connection', client => {
                         }
                     });
                 }
-                else io.emit('stop_dwnld_msg', {msg: msg, idx: req.idx});
+                else io.emit('stop_dwnld_msg', {msg: 'Process already stopped', idx: req.idx});
             }
         });
     });
 
     // fetch storage info
     client.on('get_storage_info', function(){
-        const df=spawn("df", ["-H", "--sync", "--output=size,used,avail,pcent", "--type=ext41"]);
+        const df=spawn("df", ["-H", "--sync", "--output=size,used,avail,pcent", "--type=ext4"]);
         df.stdout.on('data', dfout => {
             io.to(client.id).emit("storage_info_msg", `${dfout}`);
         });
@@ -142,6 +142,33 @@ io.on('connection', client => {
         });
     });
 
+    // send running process pid to the client
+    function get_process_info(){
+        let reply={'total': 0, 'pid':[]};
+        ps.lookup({command: 'goLeecher_x64', arguments: 'download'}, function(err, resultList){
+            if(err){
+                throw new Error(err);
+            }
+            else if(resultList.length){
+                reply['total']=resultList.length;
+                resultList.forEach(function(process){
+                    if(process){
+                        reply['pid'].push(process.pid);
+                    }
+                });
+            }
+            io.to(client.id).emit("process_info", reply);
+        });
+    }
+    let proc_monitor=null;
+    client.on('start_procmon', function(){ proc_monitor=setInterval(get_process_info, 1000) });
+    client.on('stop_procmon', function(){ clearInterval(proc_monitor) });
+    client.on('stop_pid', pid => { process.kill(pid, 'SIGKILL') });
+
     // client disconnection log
-    client.on('disconnect', (reason) => { console.log("[*] "+reason+" ["+client.id+"]") });
+    client.on('disconnect', (reason) => {
+        console.log("[*] "+reason+" ["+client.id+"]");
+        // stop the process monitor
+        clearInterval(proc_monitor);
+    });
 });
