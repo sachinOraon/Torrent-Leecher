@@ -2,7 +2,9 @@
 A simple web interface for downloading torrent files. Just provide the `magnet` link or `.torrent` file url and sit back. The request is forwaded to a golang executable(compiled from `github.com/anacrolix/torrent/tree/master/cmd/torrent`) that gets the job done. This is very minimalistic implementation of `github.com/anacrolix/torrent` library along with `Node.js` and `jQuery`. File browsing is provided by `h5ai` file indexer that has many great features.
 
 - Home Page
-<p align="center"><img src="img/snap_shot.JPG"></p>
+<p align="center"><img src="img/snap_shot.png"></p>
+- Download List
+<p align="center"><img src="img/download_list.png"></p>
 
 - Steps to setup
 1. Clone this repository to `/var/www/html/torrent`
