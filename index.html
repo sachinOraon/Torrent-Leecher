@@ -363,8 +363,8 @@
           date.setTime(date.getTime() + (24*60*60*1000));
           let expires = "expires="+ date.toUTCString();
           let logfile="../files/_log/"+Math.floor(Date.now() / 1000)+".txt";
-          let cur_idx=$("#dlModal .modal-body div.alert > a").length + 1;
-          document.cookie = "idx-" + cur_idx + "=logfile:" + logfile + " torlink:" + url + ";" + expires + ";path=/; SameSite=None; Secure";
+          let cur_idx=Math.random().toString(36).substring(2,7);
+          document.cookie = "idx-" + cur_idx + "=logfile:" + logfile + " torlink:" + url + ";" + expires + ";path=/; SameSite=Strict;";
 
           // send the request to server
           let payload={"url": url, "idx": cur_idx, "logfile": logfile};
