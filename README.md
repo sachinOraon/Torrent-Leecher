@@ -13,7 +13,7 @@ A simple web interface for downloading torrent files. Just provide the `magnet` 
 3. After that, install following packages `sudo apt install apache2 php libapache2-mod-php php7.4-gd ffmpeg zip graphicsmagick -y`
 4. Install latest version of [Node.js](https://nodejs.org/en/download/) Make sure to select `Linux Binaries (x64)`
 5. Open the file `/etc/apache2/mods-available/dir.conf` and edit the line beginning with `DirectoryIndex`, add this `/torrent/files/_h5ai/public/index.php` at the end
-6. The goLeecher_x64 binary provided here may not work on your system so we need to build it.
+6. The `goLeecher_x64` binary provided here may not work on your system so we need to build it.
     1. Install the latest version of [go](https://golang.org/doc/install)
     2. Install `build-essential` package by `sudo apt install build-essential -y`
     3. Clone this repository [github.com/anacrolix/torrent.git](https://github.com/anacrolix/torrent.git) at `$HOME`
@@ -23,3 +23,9 @@ A simple web interface for downloading torrent files. Just provide the `magnet` 
     7. Now replace `/var/www/html/torrent/websocket/goLeecher_x64` with the `$HOME/go/bin/goLeecher_x64` 
 7. Start the websocket server by executing `cd /var/www/html/torrent/websocket && node server.js` command
 8. Restart the `apache2` server and go to `localhost/torrent`
+
+- Steps to setup using docker
+1. Download the `deploy.sh` file and give it `execute` permission
+2. Make sure to have `git` and `docker` installed.
+3. Just run the `deploy.sh` file and navigate to `localhost:8090`
+4. To stop the containers, execute `docker stop torrent-ws torrent-httpd`

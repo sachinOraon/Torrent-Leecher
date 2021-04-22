@@ -20,7 +20,7 @@ io.on('connection', client => {
     client.on("torrent_url", (data, callback) => {
         var file_size;
         // execute goLecheer_x64 file
-        const child = spawn("./goLeecher_x64", ["download", "--quiet=true", '--logfile='+data.logfile, data.url]);
+        const child = spawn("./goLeecher", ["download", "--quiet=true", '--logfile='+data.logfile, data.url]);
         child.stdout.on("data", goOut => {
             let output=JSON.parse(`${goOut}`);
             output["index"]=data.idx;
@@ -56,7 +56,7 @@ io.on('connection', client => {
     client.on("get_file_info", req => {
         let reply={"idx": req.idx, "url": req.url};
         // process table lookup
-        ps.lookup({command: 'goLeecher_x64', arguments: '--logfile='+req.file}, function(err, resultList) {
+        ps.lookup({command: 'goLeecher', arguments: '--logfile='+req.file}, function(err, resultList) {
             if(err){
                 throw new Error(err);
             }
@@ -93,7 +93,7 @@ io.on('connection', client => {
     // stopping download
     client.on('stop_dwnld', req => {
         // find the process id
-        ps.lookup({command: 'goLeecher_x64', arguments: '--logfile='+req.logfile}, function(err, resultList){
+        ps.lookup({command: 'goLeecher', arguments: '--logfile='+req.logfile}, function(err, resultList){
             if(err){
                 io.emit('stop_dwnld_msg', {msg: err.code+': ps.lookup() error!', idx: req.idx});
             }
@@ -145,7 +145,7 @@ io.on('connection', client => {
     // send running process pid to the client
     function get_process_info(){
         let reply={'total': 0, 'pid':[]};
-        ps.lookup({command: 'goLeecher_x64', arguments: 'download'}, function(err, resultList){
+        ps.lookup({command: 'goLeecher', arguments: 'download'}, function(err, resultList){
             if(err){
                 throw new Error(err);
             }

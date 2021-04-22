@@ -260,7 +260,7 @@
 
   $(document).ready(function(){
     //socket.io connection initialization
-    var serverUrl="http://"+window.location.host+":8080";
+    var serverUrl="http://"+window.location.hostname+":8080";
     const socket = io(serverUrl);
 
     socket.on("connect", () => {
