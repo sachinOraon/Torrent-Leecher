@@ -512,21 +512,24 @@
     // storage info function
     $('#storage_info_btn').popover({
       title    : '<span class="font-weight-bold text-monospace"><i class="fas fa-hdd"></i>&nbsp;Storage Info</span>',
-      content  : '<pre id="storage_info_body" class="h6 font-weight-bold text-monospace"><div class="spinner-grow text-success"></div></pre>',
+      content  : '<div id="storage_info_body" class="h6 font-weight-bold text-monospace"><div class="spinner-grow text-success"></div></div>',
       html     : true,
       trigger  : 'focus',
-      placement: 'top'
+      placement: 'auto'
     });
     $('#storage_info_btn').on('click', function(){
       socket.emit('get_storage_info');
     });
-    socket.on('storage_info_msg', resp => {
-      $('#storage_info_body div.spinner').remove();
-      $('#storage_info_body').text(resp);
+    socket.on('storage_info_msg', info => {
+      $('#storage_info_body div.spinner-grow').remove();
+      if(info.err == null)
+        $('#storage_info_body').append('<pre>Total: '+info.total+'\nUsed : '+info.used+'\nFree : '+info.available+'</pre>');
+      else
+        $('#storage_info_body').append('<div class="alert alert-danger text-break">'+info.err+'</div>');
     });
     $('#storage_info_btn').on('hidden.bs.popover', function(){
-      $('#storage_info_body').text('');
-      $('#storage_info_body').html('<div class="spinner-grow text-success"></div>');
+      $('#storage_info_body').children().remove();
+      $('#storage_info_body').append('<div class="spinner-grow text-success"></div>');
     });
 
     // process list info modal

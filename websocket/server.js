@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const human = require('humanize-plus');
+const disk = require('diskusage');
 const ps = require('ps-node');
 const fs = require('fs');
 const { spawn } = require("child_process");
@@ -133,12 +135,17 @@ io.on('connection', client => {
 
     // fetch storage info
     client.on('get_storage_info', function(){
-        const df=spawn("df", ["-H", "--sync", "--output=size,used,avail,pcent", "--type=ext4"]);
-        df.stdout.on('data', dfout => {
-            io.to(client.id).emit("storage_info_msg", `${dfout}`);
-        });
-        df.stderr.on('data', err => {
-            io.to(client.id).emit("storage_info_msg", `ERR: ${err}`);
+        disk.check('/', function(err, info){
+            if(err)
+                io.to(client.id).emit("storage_info_msg", {err: `${err}`});
+            else
+            {
+                info.err=null;
+                info.used=human.fileSize(info.total - info.available);
+                info.total=human.fileSize(info.total);
+                info.available=human.fileSize(info.available);
+                io.to(client.id).emit("storage_info_msg", info);
+            }
         });
     });
 
