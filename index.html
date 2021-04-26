@@ -30,6 +30,10 @@
     .modal-open .navbar-expand-lg {
         padding-right: 16px !important;
     }
+    .blur-bg {
+      filter: blur(2px);
+      -webkit-filter: blur(2px);
+    }
   </style>
 </head>
 
@@ -195,7 +199,7 @@
   <!-- Navbar -->
 
   <!-- Full Page Intro -->
-  <div id="particles-js" class="view" style="background-image: url('https://www.hdwallpapers.in/download/abstract_dark_colorful_digital_art_4k_hd_abstract-1280x720.jpg'); background-repeat: no-repeat; background-size: cover;">
+  <div id="main-container" class="view" style="background-image: url('img/bg.jpg'); background-repeat: no-repeat; background-size: cover;">
 
     <!-- Mask & flexbox options-->
     <div class="mask rgba-black-light d-flex justify-content-center align-items-center">
@@ -339,6 +343,15 @@
         }
         $(node).parent().find('.fstop').remove();
       }
+    });
+
+    $('a[data-toggle=modal]').on('click', function(){
+      setTimeout(function(){
+        $('#main-container').addClass('blur-bg');
+      }, 100);
+    });
+    $('div.modal').on('hide.bs.modal', function(){
+      $('#main-container').removeClass('blur-bg');
     });
 
     // Download button click event

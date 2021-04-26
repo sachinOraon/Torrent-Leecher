@@ -34,6 +34,10 @@ function fetch_files {
     echo -e "\r${tick} ${cyan}Cloning${nocol} ${green}sachinOraon/Torrent-Leecher.git${nocol}"
     chmod -R o+w $HTTPD_SRC/files
 
+    echo -e "${wait} ${cyan}Installing node modules${nocol}"
+    rm -r $HTTPD_SRC/websocket/node_modules
+    docker run --rm -dit -v $HTTPD_SRC/websocket:/root/node -w /root/node node:latest npm install
+
     echo -e "${wait} ${cyan}Building image${nocol} ${yellow}php_apache:torrent${nocol}"
     echo -e "#!/usr/bin/env bash\nsed -i 's/index.html/index.html \/files\/_h5ai\/public\/index.php/' /etc/apache2/conf-available/docker-php.conf\napache2-foreground" > $APP_DIR/start_apache
     chmod u+x $APP_DIR/start_apache
@@ -60,6 +64,7 @@ function fetch_files {
     rm $HTTPD_SRC/websocket/goLeecher
     cp $GO_SRC/cmd/torrent/torrent $HTTPD_SRC/websocket/goLeecher
 
+    docker image rm node:latest
     echo -e "${tick} ${green}Files downloaded and setup successfully${nocol}" | tee $STATUS
 }
 
@@ -70,7 +75,6 @@ function setup_server {
     echo -e "${tick} ${cyan}Node.js server started for${nocol} ${green}socket.io${nocol}"
     echo -e "${tick} ${yellow}To stop the containers execute${nocol} ⬎"
     echo -e "${wait} ${red}docker stop torrent-ws torrent-httpd${nocol}"
-    return 0;
 }
 
 if [[ ! -e $STATUS ||\
@@ -79,9 +83,5 @@ if [[ ! -e $STATUS ||\
     echo -e "${wait} ${cyan}Setting up environment${nocol}"
     rm -rf $APP_DIR
     fetch_files
-fi
-
-setup_server
-if [[ $? -ne 0 ]]; then
-    echo -e "${cross} ${red}Failed to setup server.${nocol} ${yellow}Try running it again${nocol}"
+else setup_server
 fi
