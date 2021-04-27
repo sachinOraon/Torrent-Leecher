@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-
 red='\e[1;31m'
 green='\e[1;32m'
 yellow='\e[1;33m'
@@ -16,18 +15,6 @@ GO_SRC=$APP_DIR/goLeecher
 HTTPD_SRC=$APP_DIR/src
 STATUS=$APP_DIR/files-status
 
-if [[ "$UID" -ne 0 ]]; then
-    echo -e "${cross} ${red}Run as${nocol} ${cyan}root${nocol}"
-    exit 1
-fi
-
-for package in git docker; do
-    if [[ -z $(which $package) ]]; then
-        echo -e "${cross} ${cyan}${package}${nocol} is ${red}missing${nocol}"
-        exit 1
-    fi
-done
-
 function fetch_files {
     echo -en "${wait} ${cyan}Cloning${nocol} ${yellow}sachinOraon/Torrent-Leecher.git${nocol}"
     git clone -b nodejs --single-branch --quiet https://github.com/sachinOraon/Torrent-Leecher.git $HTTPD_SRC
@@ -37,6 +24,7 @@ function fetch_files {
     echo -e "${wait} ${cyan}Installing node modules${nocol}"
     rm -r $HTTPD_SRC/websocket/node_modules
     docker run --rm -dit -v $HTTPD_SRC/websocket:/root/node -w /root/node node:latest npm install
+    echo -e "${tick} ${cyan}Done installing${nocol}${green}node modules${nocol}"
 
     echo -e "${wait} ${cyan}Building image${nocol} ${yellow}php_apache:torrent${nocol}"
     echo -e "#!/usr/bin/env bash\nsed -i 's/index.html/index.html \/files\/_h5ai\/public\/index.php/' /etc/apache2/conf-available/docker-php.conf\napache2-foreground" > $APP_DIR/start_apache
@@ -77,11 +65,24 @@ function setup_server {
     echo -e "${wait} ${red}docker stop torrent-ws torrent-httpd${nocol}"
 }
 
+if [[ "$UID" -ne 0 ]]; then
+    echo -e "${cross} ${red}Run as${nocol} ${cyan}root${nocol}"
+    exit 1
+fi
+
+for package in git docker; do
+    if [[ -z $(which $package) ]]; then
+        echo -e "${cross} ${cyan}${package}${nocol} is ${red}missing${nocol}"
+        exit 1
+    fi
+done
+
 if [[ ! -e $STATUS ||\
     "$(docker images --filter 'reference=php_apache:torrent' | wc -l)" -eq 1 ||\
     "$(docker images --filter 'reference=node_alpine3.13:go' | wc -l)" -eq 1 ]]; then
     echo -e "${wait} ${cyan}Setting up environment${nocol}"
     rm -rf $APP_DIR
     fetch_files
-else setup_server
 fi
+
+setup_server
