@@ -345,7 +345,7 @@
       }
     });
 
-    $('a[data-toggle=modal]').on('click', function(){
+    $('div.modal').on('show.bs.modal', function(){
       setTimeout(function(){
         $('#main-container').addClass('blur-bg');
       }, 100);
@@ -536,13 +536,13 @@
     socket.on('storage_info_msg', info => {
       $('#storage_info_body div.spinner-grow').remove();
       if(info.err == null)
-        $('#storage_info_body').append('<pre>Total: '+info.total+'\nUsed : '+info.used+'\nFree : '+info.available+'</pre>');
+        $('#storage_info_body').html('<pre>Total: '+info.total+'\nUsed : '+info.used+'\nFree : '+info.available+'</pre>');
       else
-        $('#storage_info_body').append('<div class="alert alert-danger text-break">'+info.err+'</div>');
+        $('#storage_info_body').html('<div class="alert alert-danger text-break">'+info.err+'</div>');
     });
     $('#storage_info_btn').on('hidden.bs.popover', function(){
       $('#storage_info_body').children().remove();
-      $('#storage_info_body').append('<div class="spinner-grow text-success"></div>');
+      $('#storage_info_body').html('<div class="spinner-grow text-success"></div>');
     });
 
     // process list info modal
@@ -627,6 +627,9 @@
         $('#delFileBtn').tooltip('dispose');
         socket.emit('get_file_list');
       }, 1500);
+    });
+    $('#fileListModal .modal-header button').on('click', function(){
+      $('#main-container').removeClass('blur-bg');
     });
 
   });
