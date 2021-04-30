@@ -52,17 +52,26 @@ function fetch_files {
     rm $HTTPD_SRC/websocket/goLeecher
     cp $GO_SRC/cmd/torrent/torrent $HTTPD_SRC/websocket/goLeecher
 
-    docker image rm node:latest
     echo -e "${tick} ${green}Files downloaded and setup successfully${nocol}" | tee $STATUS
 }
 
-function setup_server {
+function start_server {
     docker run --rm -dit --name torrent-httpd -p 8090:80/tcp -v $HTTPD_SRC:/var/www/html php_apache:torrent start_apache
     echo -e "${tick} ${cyan}Apache server started at${nocol} ${green}localhost:8090${nocol}"
     docker run --rm -dit --name torrent-ws -p 8080:8080/tcp -v $HTTPD_SRC:/usr/src/app -w /usr/src/app/websocket node_alpine3.13:go node server.js
     echo -e "${tick} ${cyan}Node.js server started for${nocol} ${green}socket.io${nocol}"
     echo -e "${tick} ${yellow}To stop the containers execute${nocol} ⬎"
-    echo -e "${wait} ${red}docker stop torrent-ws torrent-httpd${nocol}"
+    echo -e "${wait} ${green}docker stop torrent-ws torrent-httpd${nocol}"
+}
+
+function stop_server {
+    for container in torrent-httpd torrent-ws; do
+        if [[ -n $(docker ps --all --format {{.Names}} --filter=name=${container}) ]]; then
+            echo -e "${wait} ${cyan}Stopping${nocol} ${yellow}${container}${nocol}"
+            docker stop $container
+            echo -e "${tick} ${green}Stopped${nocol} ${yellow}${container}${nocol}"
+        fi
+    done
 }
 
 if [[ "$UID" -ne 0 ]]; then
@@ -77,6 +86,7 @@ for package in git docker; do
     fi
 done
 
+stop_server
 if [[ ! -e $STATUS ||\
     "$(docker images --filter 'reference=php_apache:torrent' | wc -l)" -eq 1 ||\
     "$(docker images --filter 'reference=node_alpine3.13:go' | wc -l)" -eq 1 ]]; then
@@ -84,5 +94,4 @@ if [[ ! -e $STATUS ||\
     rm -rf $APP_DIR
     fetch_files
 fi
-
-setup_server
+start_server
