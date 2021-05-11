@@ -23,9 +23,13 @@ function fetch_files {
 
     echo -e "${wait} ${cyan}Installing node modules${nocol}"
     rm -r $HTTPD_SRC/websocket/node_modules
-    docker run --rm -dit -v $HTTPD_SRC/websocket:/root/node -w /root/node node:latest npm install
-    echo -e "${tick} ${cyan}Done installing${nocol}${green}node modules${nocol}"
-
+    docker run --rm -it -v $HTTPD_SRC/websocket:/usr/src/app -w /usr/src/app node:latest npm install
+    if [[ -e $HTTPD_SRC/websocket/node_modules ]]; then
+        echo -e "${tick} ${cyan}Done installing ${nocol}${green}node modules${nocol}"
+    else
+        echo -e "${cross} ${cyan}Failed to install ${nocol}${yellow}node modules${nocol}"
+        exit 1
+    fi
     echo -e "${wait} ${cyan}Building image${nocol} ${yellow}php_apache:torrent${nocol}"
     echo -e "#!/usr/bin/env bash\nsed -i 's/index.html/index.html \/files\/_h5ai\/public\/index.php/' /etc/apache2/conf-available/docker-php.conf\napache2-foreground" > $APP_DIR/start_apache
     chmod u+x $APP_DIR/start_apache
@@ -56,10 +60,16 @@ function fetch_files {
 }
 
 function start_server {
+    echo -e "${wait} ${cyan}Starting Apache server at${nocol} ${green}localhost:8090${nocol}"
     docker run --rm -dit --name torrent-httpd -p 8090:80/tcp -v $HTTPD_SRC:/var/www/html php_apache:torrent start_apache
-    echo -e "${tick} ${cyan}Apache server started at${nocol} ${green}localhost:8090${nocol}"
+    echo -e "${wait} ${cyan}Starting Node.js server for${nocol} ${green}socket.io${nocol}"
     docker run --rm -dit --name torrent-ws -p 8080:8080/tcp -v $HTTPD_SRC:/usr/src/app -w /usr/src/app/websocket node_alpine3.13:go node server.js
-    echo -e "${tick} ${cyan}Node.js server started for${nocol} ${green}socket.io${nocol}"
+    for container in torrent-httpd torrent-ws; do
+        if [[ -z $(docker ps --all --format {{.Names}} --filter=name=${container}) ]]; then
+            echo -e "${cross} ${cyan}Failed to start ${nocol}${yellow}${container}${nocol}"
+            exit 1
+        fi
+    done
     echo -e "${tick} ${yellow}To stop the containers execute${nocol} ⬎"
     echo -e "${wait} ${green}docker stop torrent-ws torrent-httpd${nocol}"
 }
